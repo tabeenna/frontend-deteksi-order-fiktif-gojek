@@ -16,7 +16,6 @@ function AdminDashboard() {
               <th>Skor Risiko</th>
               <th>Kategori</th>
               <th>Status</th>
-              <th>Aksi</th>
             </tr>
           </thead>
 
@@ -29,13 +28,6 @@ function AdminDashboard() {
                 <td>{order.riskScore}</td>
                 <td>{order.riskLevel}</td>
                 <td>{order.status}</td>
-                <td>
-                  {order.riskLevel === "Tinggi" ? (
-                    <button className="danger-button">Batalkan</button>
-                  ) : (
-                    <button>Lihat</button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
