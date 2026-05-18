@@ -12,7 +12,6 @@ import DriverHome from "./pages/user/DriverHome";
 import CustomerHome from "./pages/user/CustomerHome";
 import CustomerOrder from "./pages/user/CustomerOrder";
 import AdminDashboard from "./pages/AdminDashboard";
-import SuperadminSettings from "./pages/SuperadminSettings";
 
 function App() {
   return (
@@ -31,7 +30,6 @@ function App() {
         <Route path="/customer" element={<CustomerHome />} />
         <Route path="/customer/order" element={<CustomerOrder />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/superadmin" element={<SuperadminSettings />} />
       </Routes>
     </BrowserRouter>
   );
