@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 function DriverOrdersPage() {
   const navigate = useNavigate();
+
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [message, setMessage] = useState("");
+  const [activeFilter, setActiveFilter] = useState("Semua");
+  const [modal, setModal] = useState(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [reportReason, setReportReason] = useState("");
 
   const orders = [
     {
@@ -18,10 +22,15 @@ function DriverOrdersPage() {
       riskScore: 22,
       riskLevel: "Rendah",
       status: "Aman",
+      accountAge: "1 tahun 4 bulan",
+      cancelRate: "2%",
+      paymentMethod: "GoPay",
+      recommendation: "Order dapat diterima karena indikator risiko rendah.",
       indicators: [
         "Akun aktif lebih dari 1 tahun",
         "Riwayat pembatalan rendah",
         "Lokasi penjemputan normal",
+        "Metode pembayaran terverifikasi",
       ],
     },
     {
@@ -35,10 +44,16 @@ function DriverOrdersPage() {
       riskScore: 58,
       riskLevel: "Sedang",
       status: "Perlu Verifikasi",
+      accountAge: "3 hari",
+      cancelRate: "18%",
+      paymentMethod: "Tunai",
+      recommendation:
+        "Order perlu diverifikasi menggunakan OTP/QR sebelum dilanjutkan.",
       indicators: [
         "Akun baru dibuat",
         "Alamat tujuan kurang lengkap",
-        "Perlu verifikasi OTP/QR",
+        "Riwayat transaksi masih sedikit",
+        "Perlu verifikasi tambahan",
       ],
     },
     {
@@ -52,13 +67,24 @@ function DriverOrdersPage() {
       riskScore: 84,
       riskLevel: "Tinggi",
       status: "Mencurigakan",
+      accountAge: "1 hari",
+      cancelRate: "45%",
+      paymentMethod: "Tunai",
+      recommendation:
+        "Order berisiko tinggi. Driver disarankan tidak langsung menerima order.",
       indicators: [
         "Riwayat pembatalan tinggi",
         "Lokasi penjemputan mencurigakan",
         "Tujuan tidak sesuai pola normal",
+        "Identitas customer kurang jelas",
       ],
     },
   ];
+
+  const filteredOrders =
+    activeFilter === "Semua"
+      ? orders
+      : orders.filter((order) => order.riskLevel === activeFilter);
 
   function getRiskStyle(level) {
     if (level === "Rendah") {
@@ -84,27 +110,55 @@ function DriverOrdersPage() {
     };
   }
 
+  function getRiskColor(level) {
+    if (level === "Rendah") return "#00aa13";
+    if (level === "Sedang") return "#f59e0b";
+    return "#ef4444";
+  }
+
+  function openModal(type, order) {
+    setModal({ type, order });
+    setOtpCode("");
+    setReportReason("");
+  }
+
+  function closeModal() {
+    setModal(null);
+    setOtpCode("");
+    setReportReason("");
+  }
+
   function handleAccept(order) {
     if (order.riskLevel === "Tinggi") {
-      setMessage(
-        "Order berisiko tinggi. Sistem menyarankan driver tidak langsung menerima order."
-      );
+      openModal("blocked", order);
       return;
     }
 
-    setMessage("Order diterima. Driver dapat melanjutkan proses penjemputan.");
+    openModal("accepted", order);
   }
 
-  function handleVerify(order) {
-    setMessage(
-      `Permintaan verifikasi OTP/QR dikirim untuk ${order.customer}.`
-    );
+  function handleVerifySubmit() {
+    if (otpCode.length < 6) {
+      alert("Kode OTP harus 6 digit.");
+      return;
+    }
+
+    setModal({
+      type: "verified",
+      order: modal.order,
+    });
   }
 
-  function handleReport(order) {
-    setMessage(
-      `Order ${order.id} telah dilaporkan ke admin karena terindikasi mencurigakan.`
-    );
+  function handleReportSubmit() {
+    if (!reportReason) {
+      alert("Pilih alasan laporan terlebih dahulu.");
+      return;
+    }
+
+    setModal({
+      type: "reported",
+      order: modal.order,
+    });
   }
 
   return (
@@ -127,12 +181,18 @@ function DriverOrdersPage() {
               Orders
             </button>
 
-            <button style={styles.navItem}>
+            <button
+              style={styles.navItem}
+              onClick={() => navigate("/driver/earnings")}
+            >
               <span style={styles.navIcon}>💵</span>
               Earnings
             </button>
 
-            <button style={styles.navItem}>
+            <button
+              style={styles.navItem}
+              onClick={() => navigate("/driver/account")}
+            >
               <span style={styles.navIcon}>👤</span>
               Account
             </button>
@@ -171,38 +231,66 @@ function DriverOrdersPage() {
         </header>
 
         <section style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
+          <button
+            style={{
+              ...styles.summaryCard,
+              ...(activeFilter === "Semua" ? styles.summaryCardActive : {}),
+            }}
+            onClick={() => setActiveFilter("Semua")}
+          >
             <p style={styles.summaryLabel}>Order Masuk</p>
             <h2 style={styles.summaryValue}>3</h2>
-          </div>
+            <span style={styles.summaryHint}>Semua order</span>
+          </button>
 
-          <div style={styles.summaryCard}>
+          <button
+            style={{
+              ...styles.summaryCard,
+              ...(activeFilter === "Rendah" ? styles.summaryCardActive : {}),
+            }}
+            onClick={() => setActiveFilter("Rendah")}
+          >
             <p style={styles.summaryLabel}>Risiko Rendah</p>
             <h2 style={{ ...styles.summaryValue, color: "#00aa13" }}>1</h2>
-          </div>
+            <span style={styles.summaryHint}>Aman diterima</span>
+          </button>
 
-          <div style={styles.summaryCard}>
+          <button
+            style={{
+              ...styles.summaryCard,
+              ...(activeFilter === "Sedang" ? styles.summaryCardActive : {}),
+            }}
+            onClick={() => setActiveFilter("Sedang")}
+          >
             <p style={styles.summaryLabel}>Perlu Verifikasi</p>
             <h2 style={{ ...styles.summaryValue, color: "#f59e0b" }}>1</h2>
-          </div>
+            <span style={styles.summaryHint}>Butuh OTP/QR</span>
+          </button>
 
-          <div style={styles.summaryCard}>
+          <button
+            style={{
+              ...styles.summaryCard,
+              ...(activeFilter === "Tinggi" ? styles.summaryCardActive : {}),
+            }}
+            onClick={() => setActiveFilter("Tinggi")}
+          >
             <p style={styles.summaryLabel}>Mencurigakan</p>
             <h2 style={{ ...styles.summaryValue, color: "#ef4444" }}>1</h2>
-          </div>
+            <span style={styles.summaryHint}>Perlu laporan</span>
+          </button>
         </section>
-
-        {message && <div style={styles.messageBox}>{message}</div>}
 
         <section style={styles.contentGrid}>
           <div style={styles.orderList}>
             <div style={styles.sectionHeader}>
               <h2 style={styles.sectionTitle}>Daftar Order Masuk</h2>
-              <span style={styles.smallText}>Simulasi data prototype</span>
+              <span style={styles.smallText}>
+                Filter: {activeFilter === "Semua" ? "Semua order" : activeFilter}
+              </span>
             </div>
 
-            {orders.map((order) => (
-              <div
+            {filteredOrders.map((order) => (
+              <button
                 key={order.id}
                 style={{
                   ...styles.orderCard,
@@ -211,10 +299,7 @@ function DriverOrdersPage() {
                       ? "2px solid #00aa13"
                       : "1px solid #dde3df",
                 }}
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setMessage("");
-                }}
+                onClick={() => setSelectedOrder(order)}
               >
                 <div style={styles.orderTop}>
                   <div>
@@ -244,7 +329,7 @@ function DriverOrdersPage() {
                   <span>{order.distance}</span>
                   <span>Skor {order.riskScore}/100</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
@@ -254,9 +339,7 @@ function DriverOrdersPage() {
                 <div style={styles.detailHeader}>
                   <div>
                     <p style={styles.orderId}>{selectedOrder.id}</p>
-                    <h2 style={styles.detailTitle}>
-                      Detail Risiko Order
-                    </h2>
+                    <h2 style={styles.detailTitle}>Detail Risiko Order</h2>
                   </div>
 
                   <span
@@ -273,13 +356,9 @@ function DriverOrdersPage() {
                   <div
                     style={{
                       ...styles.scoreCircle,
-                      background: `conic-gradient(${
-                        selectedOrder.riskLevel === "Tinggi"
-                          ? "#ef4444"
-                          : selectedOrder.riskLevel === "Sedang"
-                          ? "#f59e0b"
-                          : "#00aa13"
-                      } 0 ${selectedOrder.riskScore}%, #e5e7eb ${
+                      background: `conic-gradient(${getRiskColor(
+                        selectedOrder.riskLevel
+                      )} 0 ${selectedOrder.riskScore}%, #e5e7eb ${
                         selectedOrder.riskScore
                       }% 100%)`,
                     }}
@@ -292,10 +371,22 @@ function DriverOrdersPage() {
                   <div>
                     <h3 style={styles.statusTitle}>{selectedOrder.status}</h3>
                     <p style={styles.statusText}>
-                      Sistem menilai order berdasarkan akun customer, histori
-                      pembatalan, pola lokasi, dan kebutuhan verifikasi tambahan.
+                      {selectedOrder.recommendation}
                     </p>
                   </div>
+                </div>
+
+                <div style={styles.detailInfoGrid}>
+                  <InfoBox label="Usia Akun" value={selectedOrder.accountAge} />
+                  <InfoBox
+                    label="Pembatalan"
+                    value={selectedOrder.cancelRate}
+                  />
+                  <InfoBox
+                    label="Pembayaran"
+                    value={selectedOrder.paymentMethod}
+                  />
+                  <InfoBox label="Jarak" value={selectedOrder.distance} />
                 </div>
 
                 <div style={styles.indicatorBox}>
@@ -303,7 +394,21 @@ function DriverOrdersPage() {
 
                   {selectedOrder.indicators.map((item, index) => (
                     <div key={index} style={styles.indicatorItem}>
-                      <span style={styles.indicatorCheck}>✓</span>
+                      <span
+                        style={{
+                          ...styles.indicatorCheck,
+                          background:
+                            selectedOrder.riskLevel === "Tinggi"
+                              ? "#ffecec"
+                              : "#e8f8ed",
+                          color:
+                            selectedOrder.riskLevel === "Tinggi"
+                              ? "#ef4444"
+                              : "#00aa13",
+                        }}
+                      >
+                        ✓
+                      </span>
                       <span>{item}</span>
                     </div>
                   ))}
@@ -319,32 +424,256 @@ function DriverOrdersPage() {
 
                   <button
                     style={styles.verifyButton}
-                    onClick={() => handleVerify(selectedOrder)}
+                    onClick={() => openModal("verify", selectedOrder)}
                   >
                     Verifikasi
                   </button>
 
                   <button
                     style={styles.reportButton}
-                    onClick={() => handleReport(selectedOrder)}
+                    onClick={() => openModal("report", selectedOrder)}
                   >
                     Laporkan
+                  </button>
+                </div>
+
+                <div style={styles.secondaryGrid}>
+                  <button
+                    style={styles.secondaryButton}
+                    onClick={() => openModal("route", selectedOrder)}
+                  >
+                    Lihat Rute
+                  </button>
+
+                  <button
+                    style={styles.secondaryButton}
+                    onClick={() => openModal("risk", selectedOrder)}
+                  >
+                    Lihat Detail Risiko
                   </button>
                 </div>
               </>
             ) : (
               <div style={styles.emptyState}>
                 <div style={styles.emptyIcon}>📋</div>
-                <h2>Pilih salah satu order</h2>
-                <p>
-                  Klik order di sebelah kiri untuk melihat detail skor risiko dan
-                  rekomendasi tindakan.
+                <h2 style={styles.emptyTitle}>Pilih salah satu order</h2>
+                <p style={styles.emptyText}>
+                  Klik order di sebelah kiri untuk melihat detail skor risiko,
+                  indikator, dan rekomendasi tindakan.
                 </p>
               </div>
             )}
           </div>
         </section>
       </main>
+
+      {modal && (
+        <div style={styles.modalBackdrop} onClick={closeModal}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <button style={styles.modalClose} onClick={closeModal}>
+              ×
+            </button>
+
+            {modal.type === "route" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Rute Order</h2>
+                <p style={styles.modalText}>
+                  Berikut simulasi rute perjalanan berdasarkan order yang dipilih.
+                </p>
+
+                <div style={styles.modalRouteBox}>
+                  <div style={styles.modalRouteItem}>
+                    <span style={styles.routeDotGreen}></span>
+                    <div>
+                      <p style={styles.routeLabel}>Lokasi Jemput</p>
+                      <h3 style={styles.routeValue}>{modal.order.pickup}</h3>
+                    </div>
+                  </div>
+
+                  <div style={styles.modalRouteLine}></div>
+
+                  <div style={styles.modalRouteItem}>
+                    <span style={styles.routeDotRed}></span>
+                    <div>
+                      <p style={styles.routeLabel}>Lokasi Tujuan</p>
+                      <h3 style={styles.routeValue}>
+                        {modal.order.destination}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={styles.fakeMap}>
+                  <div style={styles.mapLabel}>
+                    📍 Simulasi Peta Rute • {modal.order.distance}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {modal.type === "risk" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Analisis Risiko</h2>
+                <p style={styles.modalText}>
+                  Sistem menghitung risiko berdasarkan kombinasi data akun,
+                  pembatalan, lokasi, pembayaran, dan kebutuhan verifikasi.
+                </p>
+
+                <div style={styles.riskDetailGrid}>
+                  <InfoBox label="Skor Risiko" value={`${modal.order.riskScore}/100`} />
+                  <InfoBox label="Kategori" value={modal.order.riskLevel} />
+                  <InfoBox label="Usia Akun" value={modal.order.accountAge} />
+                  <InfoBox label="Pembatalan" value={modal.order.cancelRate} />
+                </div>
+
+                <div style={styles.modalAlert}>
+                  <b>Rekomendasi:</b> {modal.order.recommendation}
+                </div>
+              </>
+            )}
+
+            {modal.type === "verify" && (
+              <>
+                <h2 style={styles.modalTitle}>Verifikasi Customer</h2>
+                <p style={styles.modalText}>
+                  Masukkan kode OTP simulasi untuk memastikan customer benar-benar
+                  melakukan pemesanan.
+                </p>
+
+                <input
+                  style={styles.otpInput}
+                  type="text"
+                  maxLength="6"
+                  placeholder="Masukkan 6 digit OTP"
+                  value={otpCode}
+                  onChange={(e) =>
+                    setOtpCode(e.target.value.replace(/\D/g, ""))
+                  }
+                />
+
+                <button style={styles.modalPrimaryButton} onClick={handleVerifySubmit}>
+                  Verifikasi OTP
+                </button>
+
+                <button
+                  style={styles.modalSecondaryButton}
+                  onClick={() => alert("Kode OTP simulasi dikirim ulang.")}
+                >
+                  Kirim Ulang OTP
+                </button>
+              </>
+            )}
+
+            {modal.type === "verified" && (
+              <>
+                <h2 style={styles.modalTitle}>Verifikasi Berhasil</h2>
+                <p style={styles.modalText}>
+                  Customer berhasil diverifikasi. Order dapat dilanjutkan dengan
+                  tingkat keamanan lebih baik.
+                </p>
+
+                <button style={styles.modalPrimaryButton} onClick={closeModal}>
+                  Oke, lanjutkan
+                </button>
+              </>
+            )}
+
+            {modal.type === "report" && (
+              <>
+                <h2 style={styles.modalTitle}>Laporkan Order</h2>
+                <p style={styles.modalText}>
+                  Pilih alasan mengapa order ini dianggap mencurigakan.
+                </p>
+
+                <select
+                  style={styles.selectInput}
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                >
+                  <option value="">Pilih alasan laporan</option>
+                  <option value="Alamat tidak jelas">Alamat tidak jelas</option>
+                  <option value="Customer sulit dihubungi">
+                    Customer sulit dihubungi
+                  </option>
+                  <option value="Lokasi mencurigakan">
+                    Lokasi mencurigakan
+                  </option>
+                  <option value="Indikasi order fiktif">
+                    Indikasi order fiktif
+                  </option>
+                </select>
+
+                <button style={styles.reportSubmitButton} onClick={handleReportSubmit}>
+                  Kirim Laporan
+                </button>
+              </>
+            )}
+
+            {modal.type === "reported" && (
+              <>
+                <h2 style={styles.modalTitle}>Laporan Dikirim</h2>
+                <p style={styles.modalText}>
+                  Order {modal.order.id} telah ditandai mencurigakan dan dikirim
+                  ke admin untuk ditinjau.
+                </p>
+
+                <button style={styles.modalPrimaryButton} onClick={closeModal}>
+                  Mengerti
+                </button>
+              </>
+            )}
+
+            {modal.type === "accepted" && (
+              <>
+                <h2 style={styles.modalTitle}>Order Diterima</h2>
+                <p style={styles.modalText}>
+                  Order {modal.order.id} berhasil diterima. Driver dapat menuju
+                  lokasi penjemputan.
+                </p>
+
+                <button style={styles.modalPrimaryButton} onClick={closeModal}>
+                  Mulai Perjalanan
+                </button>
+              </>
+            )}
+
+            {modal.type === "blocked" && (
+              <>
+                <h2 style={styles.modalTitle}>Order Berisiko Tinggi</h2>
+                <p style={styles.modalText}>
+                  Sistem mendeteksi order ini berisiko tinggi. Driver disarankan
+                  melakukan verifikasi atau melaporkan order terlebih dahulu.
+                </p>
+
+                <div style={styles.modalButtonGrid}>
+                  <button
+                    style={styles.verifyButton}
+                    onClick={() => openModal("verify", modal.order)}
+                  >
+                    Verifikasi
+                  </button>
+
+                  <button
+                    style={styles.reportButton}
+                    onClick={() => openModal("report", modal.order)}
+                  >
+                    Laporkan
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div style={styles.infoBox}>
+      <p style={styles.infoLabel}>{label}</p>
+      <h3 style={styles.infoValue}>{value}</h3>
     </div>
   );
 }
@@ -527,6 +856,13 @@ const styles = {
     border: "1px solid #dde3df",
     borderRadius: "16px",
     padding: "18px",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  summaryCardActive: {
+    border: "2px solid #00aa13",
+    background: "#f0fff4",
   },
 
   summaryLabel: {
@@ -536,19 +872,15 @@ const styles = {
   },
 
   summaryValue: {
-    margin: "8px 0 0",
+    margin: "8px 0 4px",
     color: "#111827",
     fontSize: "28px",
   },
 
-  messageBox: {
-    background: "#f8fbff",
-    border: "1px solid #d8e4f2",
-    color: "#374151",
-    borderRadius: "14px",
-    padding: "14px 16px",
-    marginBottom: "22px",
-    fontSize: "14px",
+  summaryHint: {
+    color: "#6b7280",
+    fontSize: "12px",
+    fontWeight: 700,
   },
 
   contentGrid: {
@@ -587,6 +919,7 @@ const styles = {
     borderRadius: "18px",
     padding: "18px",
     cursor: "pointer",
+    textAlign: "left",
   },
 
   orderTop: {
@@ -667,7 +1000,7 @@ const styles = {
     background: "#f7f9f8",
     borderRadius: "16px",
     padding: "18px",
-    marginBottom: "20px",
+    marginBottom: "18px",
   },
 
   scoreCircle: {
@@ -702,6 +1035,31 @@ const styles = {
     lineHeight: "1.5",
   },
 
+  detailInfoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginBottom: "20px",
+  },
+
+  infoBox: {
+    background: "#f7f9f8",
+    borderRadius: "14px",
+    padding: "14px",
+  },
+
+  infoLabel: {
+    margin: 0,
+    color: "#6b7280",
+    fontSize: "13px",
+  },
+
+  infoValue: {
+    margin: "6px 0 0",
+    color: "#111827",
+    fontSize: "16px",
+  },
+
   indicatorBox: {
     marginBottom: "22px",
   },
@@ -725,8 +1083,6 @@ const styles = {
     width: "22px",
     height: "22px",
     borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -737,6 +1093,7 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
     gap: "10px",
+    marginBottom: "12px",
   },
 
   acceptButton: {
@@ -769,6 +1126,22 @@ const styles = {
     cursor: "pointer",
   },
 
+  secondaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+
+  secondaryButton: {
+    border: "1px solid #dde3df",
+    background: "white",
+    color: "#374151",
+    padding: "12px",
+    borderRadius: "12px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
   emptyState: {
     height: "100%",
     minHeight: "460px",
@@ -783,6 +1156,203 @@ const styles = {
   emptyIcon: {
     fontSize: "48px",
     marginBottom: "14px",
+  },
+
+  emptyTitle: {
+    margin: "0 0 8px",
+    color: "#374151",
+  },
+
+  emptyText: {
+    maxWidth: "360px",
+    lineHeight: "1.6",
+  },
+
+  modalBackdrop: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 99,
+  },
+
+  modalCard: {
+    width: "540px",
+    maxWidth: "92vw",
+    background: "white",
+    borderRadius: "22px",
+    padding: "28px",
+    position: "relative",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+  },
+
+  modalClose: {
+    position: "absolute",
+    top: "16px",
+    right: "18px",
+    border: "none",
+    background: "transparent",
+    fontSize: "28px",
+    cursor: "pointer",
+  },
+
+  modalTitle: {
+    margin: "0 0 12px",
+    color: "#111827",
+  },
+
+  modalText: {
+    color: "#4b5563",
+    lineHeight: "1.6",
+    marginBottom: "18px",
+  },
+
+  modalRouteBox: {
+    background: "#f7f9f8",
+    borderRadius: "16px",
+    padding: "18px",
+    marginBottom: "18px",
+  },
+
+  modalRouteItem: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "flex-start",
+  },
+
+  modalRouteLine: {
+    width: "2px",
+    height: "28px",
+    background: "#d1d5db",
+    marginLeft: "6px",
+  },
+
+  routeDotGreen: {
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    background: "#00aa13",
+    marginTop: "5px",
+  },
+
+  routeDotRed: {
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    background: "#ef4444",
+    marginTop: "5px",
+  },
+
+  routeLabel: {
+    margin: 0,
+    color: "#6b7280",
+    fontSize: "13px",
+  },
+
+  routeValue: {
+    margin: "5px 0 0",
+    color: "#111827",
+    fontSize: "16px",
+  },
+
+  fakeMap: {
+    height: "170px",
+    borderRadius: "16px",
+    background:
+      "linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), repeating-linear-gradient(35deg, #d8dedb 0 2px, transparent 2px 38px), repeating-linear-gradient(125deg, #d8dedb 0 2px, transparent 2px 46px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  mapLabel: {
+    background: "white",
+    borderRadius: "12px",
+    padding: "14px 18px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+    fontWeight: 800,
+  },
+
+  riskDetailGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginBottom: "16px",
+  },
+
+  modalAlert: {
+    background: "#f8fbff",
+    border: "1px solid #d8e4f2",
+    borderRadius: "14px",
+    padding: "14px",
+    color: "#374151",
+    lineHeight: "1.6",
+  },
+
+  otpInput: {
+    width: "100%",
+    padding: "15px 16px",
+    borderRadius: "12px",
+    border: "1px solid #d6dde8",
+    background: "#f8fafc",
+    fontSize: "18px",
+    letterSpacing: "6px",
+    textAlign: "center",
+    marginBottom: "14px",
+  },
+
+  selectInput: {
+    width: "100%",
+    padding: "15px 16px",
+    borderRadius: "12px",
+    border: "1px solid #d6dde8",
+    background: "#f8fafc",
+    fontSize: "15px",
+    marginBottom: "14px",
+  },
+
+  modalPrimaryButton: {
+    width: "100%",
+    border: "none",
+    background: "#00aa13",
+    color: "white",
+    padding: "14px",
+    borderRadius: "999px",
+    fontWeight: 800,
+    cursor: "pointer",
+    marginTop: "8px",
+  },
+
+  modalSecondaryButton: {
+    width: "100%",
+    border: "1px solid #dde3df",
+    background: "white",
+    color: "#374151",
+    padding: "14px",
+    borderRadius: "999px",
+    fontWeight: 800,
+    cursor: "pointer",
+    marginTop: "10px",
+  },
+
+  reportSubmitButton: {
+    width: "100%",
+    border: "none",
+    background: "#ef4444",
+    color: "white",
+    padding: "14px",
+    borderRadius: "999px",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  modalButtonGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginTop: "16px",
   },
 };
 

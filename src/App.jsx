@@ -12,12 +12,15 @@ import DriverHome from "./pages/user/DriverHome";
 import CustomerHome from "./pages/user/CustomerHome";
 import CustomerOrder from "./pages/user/CustomerOrder";
 import AdminDashboard from "./pages/AdminDashboard";
+import DriverEarningsPage from "./pages/user/DriverEarningsPage";
+import DriverAccountPage from "./pages/user/DriverAccountPage";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/driver/earnings" element={<DriverEarningsPage />} />
         <Route path="/driver/orders" element={<DriverOrdersPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
@@ -30,6 +33,7 @@ function App() {
         <Route path="/customer" element={<CustomerHome />} />
         <Route path="/customer/order" element={<CustomerOrder />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/driver/account" element={<DriverAccountPage />} />
       </Routes>
     </BrowserRouter>
   );
