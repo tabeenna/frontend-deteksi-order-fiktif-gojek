@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import heroImage from "../../assets/gojek-logo.jpeg";
+import { apiRequest, saveAuthData } from "../../services/api";
 
 function VerifyOtpPage() {
   const navigate = useNavigate();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   function handleChange(value, index) {
     if (!/^[0-9]?$/.test(value)) return;
@@ -19,23 +22,47 @@ function VerifyOtpPage() {
     }
   }
 
-  function handleVerify(e) {
+  function handleKeyDown(e, index) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  }
+
+  async function handleVerify(e) {
     e.preventDefault();
+    setError("");
 
     const otpCode = otp.join("");
 
     if (otpCode.length < 6) {
-      alert("Kode OTP harus 6 digit.");
+      setError("Kode OTP harus 6 digit.");
       return;
     }
 
-    alert("Verifikasi OTP berhasil.");
-    navigate("/complete-profile");
+    setLoading(true);
+
+    try {
+      const response = await apiRequest("/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({
+          otp_code: otpCode,
+        }),
+      });
+
+      saveAuthData(response.data);
+
+      navigate(response.data.next_route || "/complete-profile");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div style={styles.page}>
-      <section style={styles.left}>
+            <section style={styles.left}>
         <div style={styles.logoBox}>
           <img src={heroImage} alt="Gojek Logo" style={styles.logoImage} />
         </div>
@@ -46,43 +73,48 @@ function VerifyOtpPage() {
         </h1>
 
         <p style={styles.leftText}>
-          Verifikasi akun membantu menjaga keamanan pengguna dan mengurangi
-          potensi penyalahgunaan order fiktif.
+          Bergabunglah dengan jutaan orang lainnya untuk menikmati kemudahan
+          transportasi, pesan antar makanan, dan pembayaran digital dalam satu
+          aplikasi.
         </p>
 
         <div style={styles.featureRow}>
           <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>🛡️</div>
+            <div style={styles.featureIcon}>🚲</div>
             <div>
-              Akun Lebih <br />
-              Aman
+              Layanan Transportasi <br />
+              Terpercaya
             </div>
           </div>
 
           <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>🔐</div>
+            <div style={styles.featureIcon}>🍴</div>
             <div>
-              Verifikasi <br />
-              Terlindungi
+              Pesan Antar Makanan <br />
+              Tercepat
             </div>
           </div>
         </div>
-      </section>
+      </section> 
 
       <section style={styles.right}>
         <div style={styles.formWrapper}>
           <h2 style={styles.title}>Verifikasi OTP</h2>
 
           <p style={styles.subtitle}>
-            Masukkan 6 digit kode OTP yang dikirimkan ke nomor telepon atau email Anda.
+            Masukkan 6 digit kode OTP yang dikirimkan ke nomor telepon atau
+            email Anda. Untuk prototype ini, gunakan kode <b>123456</b>.
           </p>
 
           <div style={styles.alert}>
             <span>🛡️</span>
             <p style={styles.alertText}>
-              Kode OTP digunakan untuk memastikan akun benar-benar dimiliki oleh pengguna yang mendaftar.
+              Kode OTP digunakan untuk memastikan akun benar-benar dimiliki oleh
+              pengguna yang mendaftar.
             </p>
           </div>
+
+          {error && <div style={styles.errorBox}>{error}</div>}
 
           <form onSubmit={handleVerify} style={styles.form}>
             <div style={styles.otpRow}>
@@ -95,17 +127,19 @@ function VerifyOtpPage() {
                   maxLength="1"
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, index)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
                 />
               ))}
             </div>
 
-            <button type="submit" style={styles.mainButton}>
-              Verifikasi OTP
+            <button type="submit" style={styles.mainButton} disabled={loading}>
+              {loading ? "Memverifikasi..." : "Verifikasi OTP"}
             </button>
           </form>
 
           <p style={styles.resendText}>
-            Belum menerima kode? <span style={styles.greenText}>Kirim ulang</span>
+            Belum menerima kode?{" "}
+            <span style={styles.greenText}>Kirim ulang</span>
           </p>
 
           <button
@@ -123,72 +157,79 @@ function VerifyOtpPage() {
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    background: "#ffffff",
-    fontFamily: "Arial, sans-serif",
+  minHeight: "100vh",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  background: "#ffffff",
+  fontFamily: "Arial, sans-serif",
   },
   left: {
-    minHeight: "100vh",
-    background: "#00aa13",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "22px",
-    padding: "48px 70px",
-    textAlign: "center",
-  },
-  logoBox: {
-    width: "170px",
-    height: "170px",
-    background: "#06140a",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "24px",
-    overflow: "hidden",
-    marginBottom: "18px",
-  },
-  logoImage: {
-    width: "110px",
-    height: "110px",
-    objectFit: "contain",
-  },
-  leftTitle: {
-    fontSize: "38px",
-    lineHeight: "1.15",
-    margin: 0,
-    fontWeight: 800,
-  },
-  leftText: {
-    maxWidth: "560px",
-    fontSize: "17px",
-    lineHeight: "1.7",
-    margin: 0,
-    opacity: 0.95,
-  },
-  featureRow: {
-    display: "flex",
-    gap: "20px",
-    marginTop: "12px",
-    justifyContent: "center",
-  },
-  featureCard: {
-    width: "220px",
-    padding: "22px 18px",
-    border: "1px solid rgba(255,255,255,0.28)",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.08)",
-    fontWeight: 700,
-    lineHeight: "1.5",
-  },
-  featureIcon: {
-    fontSize: "28px",
-    marginBottom: "10px",
-  },
+  minHeight: "100vh",
+  background: "#00aa13",
+  color: "white",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "22px",
+  padding: "48px 70px",
+  textAlign: "center",
+},
+
+logoBox: {
+  width: "170px",
+  height: "170px",
+  background: "#06140a",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: "24px",
+  overflow: "hidden",
+  marginBottom: "18px",
+},
+
+logoImage: {
+  width: "110px",
+  height: "110px",
+  objectFit: "contain",
+},
+
+leftTitle: {
+  fontSize: "38px",
+  lineHeight: "1.15",
+  margin: 0,
+  fontWeight: 800,
+},
+
+leftText: {
+  maxWidth: "560px",
+  fontSize: "17px",
+  lineHeight: "1.7",
+  margin: 0,
+  opacity: 0.95,
+},
+
+featureRow: {
+  display: "flex",
+  gap: "20px",
+  marginTop: "12px",
+  justifyContent: "center",
+},
+
+featureCard: {
+  width: "220px",
+  padding: "22px 18px",
+  border: "1px solid rgba(255,255,255,0.28)",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.08)",
+  fontWeight: 700,
+  lineHeight: "1.5",
+},
+
+featureIcon: {
+  fontSize: "28px",
+  marginBottom: "10px",
+},
   right: {
     minHeight: "100vh",
     background: "#ffffff",
@@ -222,12 +263,21 @@ const styles = {
     padding: "14px 16px",
     borderRadius: "10px",
     color: "#1e40af",
-    marginBottom: "26px",
+    marginBottom: "18px",
   },
   alertText: {
     margin: 0,
     fontSize: "15px",
     lineHeight: "1.5",
+  },
+  errorBox: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    marginBottom: "18px",
   },
   form: {
     display: "flex",

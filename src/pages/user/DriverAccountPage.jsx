@@ -1,302 +1,358 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import DriverLayout, {
+  Card,
+  StatCard,
+  Badge,
+} from "../../components/driver/DriverLayout";
 
 function DriverAccountPage() {
-  const navigate = useNavigate();
+  const [modal, setModal] = useState(null);
 
   const documents = [
     {
       name: "KTP",
       status: "Terverifikasi",
-      icon: "🪪",
+      desc: "Identitas driver sudah valid.",
+      icon: "ID",
     },
     {
       name: "Foto Wajah",
       status: "Terverifikasi",
-      icon: "🙂",
+      desc: "Foto wajah sesuai dengan data akun.",
+      icon: "FW",
     },
     {
       name: "Data Kendaraan",
       status: "Aktif",
-      icon: "🛵",
+      desc: "Kendaraan siap digunakan untuk menerima order.",
+      icon: "DK",
     },
     {
       name: "Rekening Bank",
       status: "Terverifikasi",
-      icon: "🏦",
+      desc: "Rekening aktif untuk pencairan saldo.",
+      icon: "RB",
     },
   ];
 
-  function handleEdit(section) {
-    alert(`Fitur edit ${section} masih berupa simulasi prototype.`);
+  function openModal(type, data = null) {
+    setModal({ type, data });
   }
 
-  function handleLogout() {
-    alert("Anda berhasil keluar.");
-    navigate("/");
+  function closeModal() {
+    setModal(null);
   }
 
   return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div>
-          <div style={styles.brand}>
-            <h1 style={styles.brandTitle}>Gojek</h1>
-            <p style={styles.brandSubtitle}>Driver Portal</p>
-          </div>
+    <DriverLayout
+      activeMenu="Account"
+      title="Driver Account"
+      subtitle="Kelola profil, kendaraan, rekening, dokumen, dan keamanan akun driver."
+    >
+      <section style={styles.profileHero}>
+        <div style={styles.profileLeft}>
+          <div style={styles.bigAvatar}>SD</div>
 
-          <nav style={styles.nav}>
-            <button style={styles.navItem} onClick={() => navigate("/driver")}>
-              <span style={styles.navIcon}>🏠</span>
-              Home
-            </button>
-
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/orders")}
-            >
-              <span style={styles.navIcon}>📋</span>
-              Orders
-            </button>
-
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/earnings")}
-            >
-              <span style={styles.navIcon}>💵</span>
-              Earnings
-            </button>
-
-            <button style={{ ...styles.navItem, ...styles.navActive }}>
-              <span style={styles.navIcon}>👤</span>
-              Account
-            </button>
-          </nav>
-        </div>
-
-        <div style={styles.profileCard}>
-          <div style={styles.profileTop}>
-            <div style={styles.avatar}>👤</div>
-            <div>
-              <h3 style={styles.profileName}>Sudirman</h3>
-              <p style={styles.profileRole}>Driver</p>
-            </div>
-          </div>
-
-          <div style={styles.profileDivider}></div>
-
-          <div style={styles.profileMeta}>
-            <span>⭐ 5.0</span>
-            <span style={styles.metaDivider}></span>
-            <span>🛡️ Terverifikasi</span>
-          </div>
-        </div>
-      </aside>
-
-      <main style={styles.main}>
-        <header style={styles.header}>
           <div>
-            <h1 style={styles.pageTitle}>Account</h1>
-            <p style={styles.pageSubtitle}>
-              Kelola profil, kendaraan, rekening, dan status verifikasi akun driver.
-            </p>
-          </div>
+            <h2 style={styles.driverName}>Sudirman</h2>
+            <p style={styles.driverMeta}>Driver ID: DRV-2026-001</p>
 
-          <button style={styles.onlineButton}>Go Online</button>
-        </header>
-
-        <section style={styles.profileHero}>
-          <div style={styles.heroLeft}>
-            <div style={styles.bigAvatar}>👤</div>
-
-            <div>
-              <h2 style={styles.driverName}>Sudirman</h2>
-              <p style={styles.driverId}>Driver ID: DRV-2026-001</p>
-
-              <div style={styles.badgeRow}>
-                <span style={styles.verifiedBadge}>Terverifikasi</span>
-                <span style={styles.activeBadge}>Aktif</span>
-              </div>
+            <div style={styles.badgeRow}>
+              <Badge>Terverifikasi</Badge>
+              <Badge>Aktif</Badge>
             </div>
           </div>
+        </div>
 
-          <button
-            style={styles.editButton}
-            onClick={() => handleEdit("profil")}
-          >
-            Edit Profil
+        <button style={styles.primarySmallButton} onClick={() => openModal("profile")}>
+          Edit Profil
+        </button>
+      </section>
+
+      <section style={styles.statGrid}>
+        <StatCard label="Rating" value="5.0" note="Sangat baik" color="#087f23" />
+        <StatCard label="Order Selesai" value="142" note="Total simulasi" />
+        <StatCard label="Pembatalan" value="0%" note="Aman" color="#087f23" />
+        <StatCard label="Status Akun" value="Aktif" note="Siap menerima order" color="#087f23" />
+      </section>
+
+      <section style={styles.contentGrid}>
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Informasi Pribadi</h2>
+              <p style={styles.sectionText}>
+                Data dasar driver yang digunakan untuk identitas akun.
+              </p>
+            </div>
+
+            <button style={styles.softButton} onClick={() => openModal("profile")}>
+              Ubah
+            </button>
+          </div>
+
+          <div style={styles.infoList}>
+            <InfoItem label="Nama Lengkap" value="Sudirman" />
+            <InfoItem label="Email" value="sudirman.driver@email.com" />
+            <InfoItem label="Nomor Telepon" value="+62 812-3456-7890" />
+            <InfoItem label="Kota Operasional" value="Malang" />
+          </div>
+        </Card>
+
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Data Kendaraan</h2>
+              <p style={styles.sectionText}>
+                Kendaraan yang digunakan driver untuk menerima order.
+              </p>
+            </div>
+
+            <button style={styles.softButton} onClick={() => openModal("vehicle")}>
+              Ubah
+            </button>
+          </div>
+
+          <button style={styles.vehicleBox} onClick={() => openModal("vehicle")}>
+            <div style={styles.vehicleIcon}>GR</div>
+
+            <div>
+              <h3 style={styles.vehicleTitle}>GoRide</h3>
+              <p style={styles.vehicleText}>Honda Vario • N 1234 ABC</p>
+              <p style={styles.vehicleText}>Tahun kendaraan: 2022</p>
+            </div>
           </button>
-        </section>
+        </Card>
+      </section>
 
-        <section style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>Rating</p>
-            <h2 style={styles.summaryValue}>5.0</h2>
-            <span style={styles.summaryNote}>Sangat baik</span>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>Order Selesai</p>
-            <h2 style={styles.summaryValue}>142</h2>
-            <span style={styles.summaryNote}>Total simulasi</span>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>Pembatalan</p>
-            <h2 style={styles.summaryValue}>0%</h2>
-            <span style={styles.summaryNote}>Aman</span>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <p style={styles.summaryLabel}>Status Akun</p>
-            <h2 style={{ ...styles.summaryValue, color: "#00aa13" }}>Aktif</h2>
-            <span style={styles.summaryNote}>Siap menerima order</span>
-          </div>
-        </section>
-
-        <section style={styles.contentGrid}>
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>Informasi Pribadi</h2>
-                <p style={styles.sectionSubtitle}>
-                  Data dasar akun driver yang terdaftar.
-                </p>
-              </div>
-
-              <button
-                style={styles.smallButton}
-                onClick={() => handleEdit("informasi pribadi")}
-              >
-                Ubah
-              </button>
-            </div>
-
-            <div style={styles.infoList}>
-              <InfoItem label="Nama Lengkap" value="Sudirman" />
-              <InfoItem label="Email" value="sudirman.driver@email.com" />
-              <InfoItem label="Nomor Telepon" value="+62 812-3456-7890" />
-              <InfoItem label="Kota Operasional" value="Malang" />
-            </div>
-          </div>
-
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>Data Kendaraan</h2>
-                <p style={styles.sectionSubtitle}>
-                  Kendaraan yang digunakan untuk menerima order.
-                </p>
-              </div>
-
-              <button
-                style={styles.smallButton}
-                onClick={() => handleEdit("kendaraan")}
-              >
-                Ubah
-              </button>
-            </div>
-
-            <div style={styles.vehicleBox}>
-              <div style={styles.vehicleIcon}>🛵</div>
-
-              <div>
-                <h3 style={styles.vehicleTitle}>GoRide</h3>
-                <p style={styles.vehicleText}>Honda Vario • N 1234 ABC</p>
-                <p style={styles.vehicleText}>Tahun kendaraan: 2022</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section style={styles.contentGrid}>
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>Rekening Bank</h2>
-                <p style={styles.sectionSubtitle}>
-                  Rekening untuk pencairan pendapatan driver.
-                </p>
-              </div>
-
-              <button
-                style={styles.smallButton}
-                onClick={() => handleEdit("rekening bank")}
-              >
-                Ubah
-              </button>
-            </div>
-
-            <div style={styles.bankCard}>
-              <div style={styles.bankIcon}>🏦</div>
-
-              <div>
-                <h3 style={styles.bankName}>BCA</h3>
-                <p style={styles.bankText}>•••• •••• 7890</p>
-                <p style={styles.bankText}>a.n. BUDI SANTOSO</p>
-              </div>
-
-              <span style={styles.bankBadge}>Terverifikasi</span>
-            </div>
-          </div>
-
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>Keamanan Akun</h2>
-                <p style={styles.sectionSubtitle}>
-                  Pengaturan keamanan dan perlindungan akun.
-                </p>
-              </div>
-            </div>
-
-            <div style={styles.securityList}>
-              <SecurityItem icon="🔐" title="Password" value="Terakhir diubah 7 hari lalu" />
-              <SecurityItem icon="📱" title="OTP Login" value="Aktif" />
-              <SecurityItem icon="🛡️" title="Deteksi Order Fiktif" value="Aktif" />
-            </div>
-          </div>
-        </section>
-
-        <section style={styles.card}>
-          <div style={styles.sectionHeader}>
+      <section style={styles.contentGrid}>
+        <Card>
+          <div style={styles.sectionHead}>
             <div>
-              <h2 style={styles.sectionTitle}>Status Dokumen</h2>
-              <p style={styles.sectionSubtitle}>
-                Dokumen dan data yang digunakan untuk proses verifikasi mitra.
+              <h2 style={styles.sectionTitle}>Rekening Bank</h2>
+              <p style={styles.sectionText}>
+                Rekening yang digunakan untuk pencairan pendapatan.
+              </p>
+            </div>
+
+            <button style={styles.softButton} onClick={() => openModal("bank")}>
+              Ubah
+            </button>
+          </div>
+
+          <button style={styles.bankBox} onClick={() => openModal("bank")}>
+            <div style={styles.bankIcon}>BCA</div>
+
+            <div>
+              <h3 style={styles.bankTitle}>BCA</h3>
+              <p style={styles.bankText}>•••• •••• 7890</p>
+              <p style={styles.bankText}>a.n. BUDI SANTOSO</p>
+            </div>
+
+            <Badge>Terverifikasi</Badge>
+          </button>
+        </Card>
+
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Keamanan Akun</h2>
+              <p style={styles.sectionText}>
+                Pengaturan keamanan untuk melindungi akun driver.
               </p>
             </div>
           </div>
 
-          <div style={styles.documentGrid}>
-            {documents.map((doc) => (
-              <div key={doc.name} style={styles.documentCard}>
-                <div style={styles.documentIcon}>{doc.icon}</div>
+          <div style={styles.securityList}>
+            <SecurityItem
+              title="Password"
+              value="Terakhir diubah 7 hari lalu"
+              onClick={() => openModal("security", "Password")}
+            />
 
-                <div>
-                  <h3 style={styles.documentName}>{doc.name}</h3>
-                  <p style={styles.documentStatus}>{doc.status}</p>
-                </div>
+            <SecurityItem
+              title="OTP Login"
+              value="Aktif"
+              onClick={() => openModal("security", "OTP Login")}
+            />
 
-                <span style={styles.documentCheck}>✓</span>
-              </div>
-            ))}
+            <SecurityItem
+              title="Deteksi Order Fiktif"
+              value="Aktif"
+              onClick={() => openModal("security", "Deteksi Order Fiktif")}
+            />
           </div>
-        </section>
+        </Card>
+      </section>
 
-        <section style={styles.dangerCard}>
+      <Card>
+        <div style={styles.sectionHead}>
           <div>
-            <h2 style={styles.dangerTitle}>Keluar dari akun</h2>
-            <p style={styles.dangerText}>
-              Gunakan tombol ini untuk keluar dari dashboard driver.
+            <h2 style={styles.sectionTitle}>Status Dokumen</h2>
+            <p style={styles.sectionText}>
+              Dokumen dan data yang digunakan untuk proses verifikasi mitra.
             </p>
           </div>
+        </div>
 
-          <button style={styles.logoutButton} onClick={handleLogout}>
-            Logout
-          </button>
-        </section>
-      </main>
-    </div>
+        <div style={styles.documentGrid}>
+          {documents.map((doc) => (
+            <button
+              key={doc.name}
+              style={styles.documentCard}
+              onClick={() => openModal("document", doc)}
+            >
+              <div style={styles.documentIcon}>{doc.icon}</div>
+
+              <h3 style={styles.documentName}>{doc.name}</h3>
+              <p style={styles.documentStatus}>{doc.status}</p>
+              <p style={styles.documentDesc}>{doc.desc}</p>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <section style={styles.dangerCard}>
+        <div>
+          <h2 style={styles.dangerTitle}>Keluar dari akun</h2>
+          <p style={styles.dangerText}>
+            Gunakan tombol ini untuk keluar dari dashboard driver.
+          </p>
+        </div>
+
+        <button style={styles.logoutButton} onClick={() => openModal("logout")}>
+          Logout
+        </button>
+      </section>
+
+      {modal && (
+        <div style={styles.modalOverlay} onClick={closeModal}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <button style={styles.modalClose} onClick={closeModal}>
+              ×
+            </button>
+
+            {modal.type === "profile" && (
+              <>
+                <h2 style={styles.modalTitle}>Edit Profil Driver</h2>
+                <p style={styles.modalText}>
+                  Bagian ini merupakan simulasi perubahan data pribadi driver.
+                </p>
+
+                <div style={styles.formGrid}>
+                  <Input label="Nama Lengkap" value="Sudirman" />
+                  <Input label="Email" value="sudirman.driver@email.com" />
+                  <Input label="Nomor Telepon" value="+62 812-3456-7890" />
+                  <Input label="Kota Operasional" value="Malang" />
+                </div>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Simpan Perubahan
+                </button>
+              </>
+            )}
+
+            {modal.type === "vehicle" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Kendaraan</h2>
+                <p style={styles.modalText}>
+                  Informasi kendaraan yang terdaftar pada akun driver.
+                </p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Layanan" value="GoRide" />
+                  <InfoBox label="Merek" value="Honda" />
+                  <InfoBox label="Model" value="Vario" />
+                  <InfoBox label="Nomor Polisi" value="N 1234 ABC" />
+                  <InfoBox label="Tahun" value="2022" />
+                  <InfoBox label="Status" value="Aktif" />
+                </div>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Oke
+                </button>
+              </>
+            )}
+
+            {modal.type === "bank" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Rekening Bank</h2>
+                <p style={styles.modalText}>
+                  Rekening ini digunakan untuk pencairan saldo driver.
+                </p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Bank" value="BCA" />
+                  <InfoBox label="Nomor Rekening" value="•••• •••• 7890" />
+                  <InfoBox label="Nama Pemilik" value="BUDI SANTOSO" />
+                  <InfoBox label="Status" value="Terverifikasi" />
+                </div>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Oke
+                </button>
+              </>
+            )}
+
+            {modal.type === "security" && (
+              <>
+                <h2 style={styles.modalTitle}>{modal.data}</h2>
+                <p style={styles.modalText}>
+                  Pengaturan <b>{modal.data}</b> masih berupa simulasi prototype.
+                  Pada sistem asli, bagian ini terhubung dengan backend keamanan akun.
+                </p>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Mengerti
+                </button>
+              </>
+            )}
+
+            {modal.type === "document" && (
+              <>
+                <h2 style={styles.modalTitle}>{modal.data.name}</h2>
+                <p style={styles.modalText}>{modal.data.desc}</p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Dokumen" value={modal.data.name} />
+                  <InfoBox label="Status" value={modal.data.status} />
+                  <InfoBox label="Validasi" value="Sesuai" />
+                  <InfoBox label="Catatan" value="Tidak ada masalah" />
+                </div>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Tutup
+                </button>
+              </>
+            )}
+
+            {modal.type === "logout" && (
+              <>
+                <h2 style={styles.modalTitle}>Konfirmasi Logout</h2>
+                <p style={styles.modalText}>
+                  Apakah Anda yakin ingin keluar dari dashboard driver?
+                </p>
+
+                <div style={styles.modalActionGrid}>
+                  <button style={styles.secondaryButton} onClick={closeModal}>
+                    Batal
+                  </button>
+
+                  <button
+                    style={styles.dangerButton}
+                    onClick={() => {
+                      window.location.href = "/";
+                    }}
+                  >
+                    Ya, Logout
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </DriverLayout>
   );
 }
 
@@ -309,550 +365,487 @@ function InfoItem({ label, value }) {
   );
 }
 
-function SecurityItem({ icon, title, value }) {
+function SecurityItem({ title, value, onClick }) {
   return (
-    <div style={styles.securityItem}>
-      <div style={styles.securityIcon}>{icon}</div>
+    <button style={styles.securityItem} onClick={onClick}>
+      <div style={styles.securityIcon}>●</div>
 
       <div>
         <h3 style={styles.securityTitle}>{title}</h3>
         <p style={styles.securityValue}>{value}</p>
       </div>
+    </button>
+  );
+}
+
+function Input({ label, value }) {
+  return (
+    <label style={styles.inputGroup}>
+      <span>{label}</span>
+      <input style={styles.input} defaultValue={value} />
+    </label>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div style={styles.infoBox}>
+      <p style={styles.infoBoxLabel}>{label}</p>
+      <h3 style={styles.infoBoxValue}>{value}</h3>
     </div>
   );
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "310px 1fr",
-    background: "#f7f9f8",
-    fontFamily: "Arial, sans-serif",
-    color: "#1f2933",
-  },
-
-  sidebar: {
-    minHeight: "100vh",
-    background: "linear-gradient(180deg, #00aa13 0%, #007f0e 100%)",
-    color: "white",
-    padding: "42px 32px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    position: "sticky",
-    top: 0,
-  },
-
-  brand: {
-    marginBottom: "34px",
-  },
-
-  brandTitle: {
-    margin: 0,
-    fontSize: "34px",
-    fontWeight: 900,
-  },
-
-  brandSubtitle: {
-    margin: "8px 0 0",
-    fontSize: "15px",
-    opacity: 0.85,
-  },
-
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-  },
-
-  navItem: {
-    width: "100%",
-    border: "none",
-    background: "transparent",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "17px",
-    fontWeight: 700,
-    padding: "16px 18px",
-    borderRadius: "14px",
-    cursor: "pointer",
-    textAlign: "left",
-    opacity: 0.92,
-  },
-
-  navActive: {
-    background: "rgba(255,255,255,0.18)",
-    opacity: 1,
-  },
-
-  navIcon: {
-    fontSize: "20px",
-    width: "26px",
-  },
-
-  profileCard: {
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "18px",
-    padding: "18px",
-  },
-
-  profileTop: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-  },
-
-  avatar: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    background: "white",
-    color: "#00aa13",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "28px",
-  },
-
-  profileName: {
-    margin: 0,
-    fontSize: "17px",
-    fontWeight: 800,
-  },
-
-  profileRole: {
-    margin: "4px 0 0",
-    opacity: 0.85,
-    fontSize: "14px",
-  },
-
-  profileDivider: {
-    height: "1px",
-    background: "rgba(255,255,255,0.16)",
-    margin: "16px 0",
-  },
-
-  profileMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "14px",
-    fontWeight: 700,
-  },
-
-  metaDivider: {
-    width: "1px",
-    height: "18px",
-    background: "rgba(255,255,255,0.28)",
-  },
-
-  main: {
-    padding: "38px 48px",
-    maxWidth: "1100px",
-    width: "100%",
-    margin: "0 auto",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: "24px",
-    borderBottom: "1px solid #e5e7eb",
-    marginBottom: "28px",
-  },
-
-  pageTitle: {
-    margin: 0,
-    fontSize: "32px",
-    color: "#111827",
-  },
-
-  pageSubtitle: {
-    margin: "8px 0 0",
-    color: "#6b7280",
-    fontSize: "15px",
-  },
-
-  onlineButton: {
-    background: "#00aa13",
-    color: "white",
-    border: "none",
-    borderRadius: "999px",
-    padding: "13px 22px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-
   profileHero: {
-    background: "linear-gradient(145deg, #ffffff, #f0fff4)",
-    border: "1px solid #dde3df",
-    borderRadius: "22px",
-    padding: "26px",
+    background: "#ffffff",
+    border: "1px solid #dfe5de",
+    borderRadius: "18px",
+    padding: "24px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "24px",
+    marginBottom: "22px",
   },
 
-  heroLeft: {
+  profileLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "20px",
+    gap: "18px",
   },
 
   bigAvatar: {
-    width: "88px",
-    height: "88px",
-    borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
+    width: "78px",
+    height: "78px",
+    borderRadius: "18px",
+    background: "#087f23",
+    color: "white",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "42px",
+    fontSize: "24px",
+    fontWeight: 900,
   },
 
   driverName: {
     margin: 0,
-    fontSize: "28px",
-    color: "#111827",
+    fontSize: "24px",
+    letterSpacing: "-0.3px",
   },
 
-  driverId: {
-    margin: "8px 0 12px",
-    color: "#6b7280",
-    fontSize: "14px",
+  driverMeta: {
+    margin: "7px 0 12px",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
   badgeRow: {
     display: "flex",
-    gap: "10px",
+    gap: "8px",
   },
 
-  verifiedBadge: {
-    background: "#e8f8ed",
-    color: "#00aa13",
-    padding: "8px 12px",
-    borderRadius: "999px",
-    fontSize: "13px",
-    fontWeight: 800,
-  },
-
-  activeBadge: {
-    background: "#eef2ff",
-    color: "#4f46e5",
-    padding: "8px 12px",
-    borderRadius: "999px",
-    fontSize: "13px",
-    fontWeight: 800,
-  },
-
-  editButton: {
+  primarySmallButton: {
     border: "none",
-    background: "#00aa13",
+    background: "#087f23",
     color: "white",
-    padding: "13px 20px",
     borderRadius: "999px",
-    fontWeight: 800,
+    padding: "12px 16px",
+    fontWeight: 900,
+    fontSize: "13px",
     cursor: "pointer",
   },
 
-  summaryGrid: {
+  statGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "16px",
-    marginBottom: "24px",
-  },
-
-  summaryCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "18px",
-    padding: "20px",
-  },
-
-  summaryLabel: {
-    margin: 0,
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  summaryValue: {
-    margin: "8px 0",
-    color: "#111827",
-    fontSize: "26px",
-  },
-
-  summaryNote: {
-    color: "#6b7280",
-    fontSize: "13px",
+    gap: "14px",
+    marginBottom: "22px",
   },
 
   contentGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "22px",
-    marginBottom: "24px",
   },
 
-  card: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "20px",
-    padding: "24px",
-    marginBottom: "24px",
-  },
-
-  sectionHeader: {
+  sectionHead: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: "16px",
-    marginBottom: "20px",
+    gap: "14px",
+    marginBottom: "18px",
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: "20px",
-    color: "#111827",
+    fontSize: "18px",
   },
 
-  sectionSubtitle: {
+  sectionText: {
     margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
-    lineHeight: "1.5",
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.6",
   },
 
-  smallButton: {
+  softButton: {
     border: "none",
-    background: "#e8f8ed",
-    color: "#00aa13",
-    padding: "10px 16px",
+    background: "#e6f3e9",
+    color: "#087f23",
     borderRadius: "999px",
-    fontWeight: 800,
+    padding: "9px 13px",
+    fontWeight: 900,
+    fontSize: "12px",
     cursor: "pointer",
   },
 
   infoList: {
     display: "grid",
-    gap: "14px",
+    gap: "12px",
   },
 
   infoItem: {
-    borderBottom: "1px solid #eef2f1",
+    borderBottom: "1px solid #edf0eb",
     paddingBottom: "12px",
   },
 
   infoLabel: {
     margin: 0,
-    color: "#6b7280",
-    fontSize: "13px",
+    color: "#68716c",
+    fontSize: "12px",
   },
 
   infoValue: {
     margin: "6px 0 0",
-    color: "#111827",
-    fontSize: "16px",
+    color: "#101828",
+    fontSize: "14px",
   },
 
   vehicleBox: {
+    width: "100%",
+    border: "none",
+    background: "#f7f8f5",
+    borderRadius: "15px",
+    padding: "16px",
     display: "flex",
-    gap: "16px",
     alignItems: "center",
-    background: "#f7f9f8",
-    borderRadius: "16px",
-    padding: "18px",
+    gap: "14px",
+    cursor: "pointer",
+    textAlign: "left",
   },
 
   vehicleIcon: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
+    width: "50px",
+    height: "50px",
+    borderRadius: "14px",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "28px",
+    fontWeight: 900,
+    fontSize: "13px",
   },
 
   vehicleTitle: {
     margin: 0,
-    color: "#111827",
-    fontSize: "18px",
+    fontSize: "16px",
   },
 
   vehicleText: {
-    margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
+    margin: "5px 0 0",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
-  bankCard: {
+  bankBox: {
+    width: "100%",
+    border: "none",
+    background: "#f7f8f5",
+    borderRadius: "15px",
+    padding: "16px",
     display: "grid",
-    gridTemplateColumns: "58px 1fr auto",
-    gap: "16px",
+    gridTemplateColumns: "50px 1fr auto",
     alignItems: "center",
-    background: "#f7f9f8",
-    borderRadius: "16px",
-    padding: "18px",
+    gap: "14px",
+    cursor: "pointer",
+    textAlign: "left",
   },
 
   bankIcon: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
+    width: "50px",
+    height: "50px",
+    borderRadius: "14px",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "28px",
+    fontWeight: 900,
+    fontSize: "12px",
   },
 
-  bankName: {
+  bankTitle: {
     margin: 0,
-    color: "#111827",
-    fontSize: "18px",
+    fontSize: "16px",
   },
 
   bankText: {
-    margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  bankBadge: {
-    background: "#e8f8ed",
-    color: "#00aa13",
-    padding: "8px 12px",
-    borderRadius: "999px",
-    fontSize: "12px",
-    fontWeight: 800,
+    margin: "5px 0 0",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
   securityList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
+    display: "grid",
+    gap: "12px",
   },
 
   securityItem: {
-    display: "flex",
-    gap: "14px",
-    alignItems: "center",
-    background: "#f7f9f8",
+    border: "none",
+    background: "#f7f8f5",
     borderRadius: "14px",
     padding: "14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    cursor: "pointer",
+    textAlign: "left",
   },
 
   securityIcon: {
-    width: "46px",
-    height: "46px",
+    width: "38px",
+    height: "38px",
     borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
   },
 
   securityTitle: {
     margin: 0,
-    color: "#111827",
-    fontSize: "16px",
+    fontSize: "14px",
   },
 
   securityValue: {
     margin: "5px 0 0",
-    color: "#6b7280",
-    fontSize: "13px",
+    color: "#68716c",
+    fontSize: "12px",
   },
 
   documentGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "16px",
+    gap: "14px",
   },
 
   documentCard: {
-    background: "#f7f9f8",
-    borderRadius: "16px",
-    padding: "18px",
-    position: "relative",
+    border: "1px solid #edf0eb",
+    background: "#f7f8f5",
+    borderRadius: "15px",
+    padding: "16px",
+    cursor: "pointer",
+    textAlign: "left",
   },
 
   documentIcon: {
-    fontSize: "30px",
-    marginBottom: "14px",
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
+    background: "#e6f3e9",
+    color: "#087f23",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 900,
+    fontSize: "12px",
+    marginBottom: "12px",
   },
 
   documentName: {
     margin: 0,
-    color: "#111827",
-    fontSize: "16px",
+    fontSize: "15px",
   },
 
   documentStatus: {
-    margin: "6px 0 0",
-    color: "#00aa13",
-    fontSize: "13px",
-    fontWeight: 800,
+    margin: "6px 0",
+    color: "#087f23",
+    fontSize: "12px",
+    fontWeight: 900,
   },
 
-  documentCheck: {
-    position: "absolute",
-    top: "14px",
-    right: "14px",
-    width: "22px",
-    height: "22px",
-    borderRadius: "50%",
-    background: "#00aa13",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "13px",
-    fontWeight: 900,
+  documentDesc: {
+    margin: 0,
+    color: "#68716c",
+    fontSize: "12px",
+    lineHeight: "1.5",
   },
 
   dangerCard: {
     background: "#fff7f7",
     border: "1px solid #fecaca",
-    borderRadius: "20px",
-    padding: "24px",
+    borderRadius: "18px",
+    padding: "22px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: "22px",
   },
 
   dangerTitle: {
     margin: 0,
     color: "#991b1b",
-    fontSize: "20px",
+    fontSize: "18px",
   },
 
   dangerText: {
-    margin: "8px 0 0",
+    margin: "6px 0 0",
     color: "#7f1d1d",
-    fontSize: "14px",
+    fontSize: "13px",
   },
 
   logoutButton: {
     border: "none",
-    background: "#ef4444",
+    background: "#b91c1c",
     color: "white",
-    padding: "13px 22px",
     borderRadius: "999px",
-    fontWeight: 800,
+    padding: "12px 18px",
+    fontWeight: 900,
+    fontSize: "13px",
     cursor: "pointer",
+  },
+
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 99,
+  },
+
+  modalCard: {
+    width: "540px",
+    maxWidth: "92vw",
+    background: "white",
+    borderRadius: "18px",
+    padding: "26px",
+    position: "relative",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+  },
+
+  modalClose: {
+    position: "absolute",
+    top: "12px",
+    right: "16px",
+    border: "none",
+    background: "transparent",
+    fontSize: "26px",
+    cursor: "pointer",
+  },
+
+  modalTitle: {
+    margin: "0 0 10px",
+    fontSize: "20px",
+  },
+
+  modalText: {
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.6",
+    marginBottom: "16px",
+  },
+
+  formGrid: {
+    display: "grid",
+    gap: "12px",
+    marginBottom: "16px",
+  },
+
+  inputGroup: {
+    display: "grid",
+    gap: "6px",
+    color: "#4b5563",
+    fontSize: "12px",
+    fontWeight: 800,
+  },
+
+  input: {
+    border: "1px solid #d6dde8",
+    background: "#f8fafc",
+    borderRadius: "12px",
+    padding: "12px 14px",
+    fontSize: "13px",
+  },
+
+  primaryButton: {
+    width: "100%",
+    border: "none",
+    background: "#087f23",
+    color: "white",
+    padding: "13px",
+    borderRadius: "999px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "13px",
+  },
+
+  secondaryButton: {
+    width: "100%",
+    border: "1px solid #dfe5de",
+    background: "white",
+    color: "#374151",
+    padding: "13px",
+    borderRadius: "999px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "13px",
+  },
+
+  dangerButton: {
+    width: "100%",
+    border: "none",
+    background: "#b91c1c",
+    color: "white",
+    padding: "13px",
+    borderRadius: "999px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "13px",
+  },
+
+  modalActionGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+  },
+
+  modalInfoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    marginBottom: "16px",
+  },
+
+  infoBox: {
+    background: "#f7f8f5",
+    borderRadius: "13px",
+    padding: "13px",
+  },
+
+  infoBoxLabel: {
+    margin: 0,
+    color: "#68716c",
+    fontSize: "12px",
+  },
+
+  infoBoxValue: {
+    margin: "6px 0 0",
+    color: "#101828",
+    fontSize: "14px",
   },
 };
 

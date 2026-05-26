@@ -1,7 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import DriverLayout, {
+  Card,
+  StatCard,
+  Badge,
+} from "../../components/driver/DriverLayout";
 
 function DriverEarningsPage() {
-  const navigate = useNavigate();
+  const [modal, setModal] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("Semua");
 
   const transactions = [
     {
@@ -11,7 +17,7 @@ function DriverEarningsPage() {
       amount: "+ Rp 24.000",
       time: "14:20",
       status: "Selesai",
-      icon: "🚗",
+      type: "Order",
     },
     {
       id: "TRX-002",
@@ -20,7 +26,7 @@ function DriverEarningsPage() {
       amount: "+ Rp 18.500",
       time: "13:45",
       status: "Selesai",
-      icon: "🛍️",
+      type: "Order",
     },
     {
       id: "TRX-003",
@@ -29,7 +35,7 @@ function DriverEarningsPage() {
       amount: "+ Rp 32.000",
       time: "12:10",
       status: "Selesai",
-      icon: "📦",
+      type: "Order",
     },
     {
       id: "TRX-004",
@@ -38,7 +44,7 @@ function DriverEarningsPage() {
       amount: "+ Rp 50.000",
       time: "11:00",
       status: "Insentif",
-      icon: "🎯",
+      type: "Bonus",
     },
   ];
 
@@ -52,489 +58,372 @@ function DriverEarningsPage() {
     { day: "Min", value: 82 },
   ];
 
+  const filteredTransactions =
+    activeFilter === "Semua"
+      ? transactions
+      : transactions.filter((item) => item.type === activeFilter);
+
+  function openModal(type, data = null) {
+    setModal({ type, data });
+  }
+
+  function closeModal() {
+    setModal(null);
+  }
+
   return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div>
-          <div style={styles.brand}>
-            <h1 style={styles.brandTitle}>Gojek</h1>
-            <p style={styles.brandSubtitle}>Driver Portal</p>
-          </div>
+    <DriverLayout
+      activeMenu="Earnings"
+      title="Earnings"
+      subtitle="Pantau pendapatan, insentif, bonus, dan riwayat transaksi driver."
+    >
+      <section style={styles.summaryGrid}>
+        <button
+          style={styles.balanceCard}
+          onClick={() => openModal("balance")}
+        >
+          <p style={styles.balanceLabel}>Saldo Tersedia</p>
+          <h1 style={styles.balanceValue}>Rp 742.500</h1>
+          <p style={styles.balanceText}>
+            Bisa dicairkan ke rekening yang sudah terverifikasi.
+          </p>
 
-          <nav style={styles.nav}>
-            <button style={styles.navItem} onClick={() => navigate("/driver")}>
-              <span style={styles.navIcon}>🏠</span>
-              Home
-            </button>
+          <span style={styles.withdrawPill}>Cairkan Saldo →</span>
+        </button>
 
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/orders")}
-            >
-              <span style={styles.navIcon}>📋</span>
-              Orders
-            </button>
+        <StatCard label="Hari Ini" value="Rp 342.500" note="14 order selesai" />
+        <StatCard
+          label="Insentif"
+          value="Rp 50.000"
+          note="Target bonus"
+          color="#087f23"
+        />
+        <StatCard label="Order Selesai" value="14" note="Hari ini" />
+      </section>
 
-            <button style={{ ...styles.navItem, ...styles.navActive }}>
-              <span style={styles.navIcon}>💵</span>
-              Earnings
-            </button>
-
-            <button style={styles.navItem} onClick={() => navigate("/driver/account")}>
-                <span style={styles.navIcon}>👤</span>
-                Account
-                </button>
-          </nav>
-        </div>
-
-        <div style={styles.profileCard}>
-          <div style={styles.profileTop}>
-            <div style={styles.avatar}>👤</div>
+      <section style={styles.contentGrid}>
+        <Card>
+          <div style={styles.sectionHead}>
             <div>
-              <h3 style={styles.profileName}>Sudirman</h3>
-              <p style={styles.profileRole}>Driver</p>
-            </div>
-          </div>
-
-          <div style={styles.profileDivider}></div>
-
-          <div style={styles.profileMeta}>
-            <span>⭐ 5.0</span>
-            <span style={styles.metaDivider}></span>
-            <span>🛡️ Terverifikasi</span>
-          </div>
-        </div>
-      </aside>
-
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div>
-            <h1 style={styles.pageTitle}>Earnings</h1>
-            <p style={styles.pageSubtitle}>
-              Pantau pendapatan, insentif, dan riwayat transaksi driver.
-            </p>
-          </div>
-
-          <button style={styles.onlineButton}>Go Online</button>
-        </header>
-
-        <section style={styles.summaryGrid}>
-          <div style={styles.balanceCard}>
-            <p style={styles.balanceLabel}>Saldo Tersedia</p>
-            <h2 style={styles.balanceValue}>Rp 742.500</h2>
-            <p style={styles.balanceNote}>
-              Bisa dicairkan ke rekening bank yang sudah terdaftar.
-            </p>
-
-            <button style={styles.withdrawButton}>Cairkan Saldo</button>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <div style={styles.summaryIcon}>💰</div>
-            <p style={styles.summaryLabel}>Hari Ini</p>
-            <h2 style={styles.summaryValue}>Rp 342.500</h2>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <div style={styles.summaryIcon}>🎯</div>
-            <p style={styles.summaryLabel}>Insentif</p>
-            <h2 style={{ ...styles.summaryValue, color: "#00aa13" }}>
-              Rp 50.000
-            </h2>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <div style={styles.summaryIcon}>📋</div>
-            <p style={styles.summaryLabel}>Order Selesai</p>
-            <h2 style={styles.summaryValue}>14</h2>
-          </div>
-        </section>
-
-        <section style={styles.contentGrid}>
-          <div style={styles.chartCard}>
-            <div style={styles.sectionHeader}>
-              <div>
-                <h2 style={styles.sectionTitle}>Pendapatan Mingguan</h2>
-                <p style={styles.sectionSubtitle}>
-                  Simulasi pendapatan dalam tujuh hari terakhir.
-                </p>
-              </div>
-
-              <span style={styles.weekBadge}>Minggu Ini</span>
-            </div>
-
-            <div style={styles.chartArea}>
-              {weeklyData.map((item) => (
-                <div key={item.day} style={styles.barItem}>
-                  <div style={styles.barTrack}>
-                    <div
-                      style={{
-                        ...styles.barFill,
-                        height: `${item.value}%`,
-                      }}
-                    ></div>
-                  </div>
-                  <p style={styles.barLabel}>{item.day}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={styles.bonusCard}>
-            <div style={styles.bonusIcon}>🎯</div>
-            <h2 style={styles.bonusTitle}>Target Bonus</h2>
-            <p style={styles.bonusText}>
-              Selesaikan 20 order lagi untuk mendapatkan bonus tambahan.
-            </p>
-
-            <div style={styles.progressBar}>
-              <div style={styles.progressFill}></div>
-            </div>
-
-            <div style={styles.progressRow}>
-              <span>80/100 Poin</span>
-              <strong>80%</strong>
-            </div>
-
-            <div style={styles.bonusInfo}>
-              <p style={styles.bonusInfoLabel}>Bonus tersedia</p>
-              <h3 style={styles.bonusInfoValue}>Rp 100.000</h3>
-            </div>
-          </div>
-        </section>
-
-        <section style={styles.transactionSection}>
-          <div style={styles.sectionHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Riwayat Pendapatan</h2>
-              <p style={styles.sectionSubtitle}>
-                Transaksi terbaru dari layanan driver.
+              <h2 style={styles.sectionTitle}>Pendapatan Mingguan</h2>
+              <p style={styles.sectionText}>
+                Simulasi pendapatan dalam tujuh hari terakhir.
               </p>
             </div>
 
-            <button style={styles.filterButton}>Filter</button>
+            <Badge>Minggu Ini</Badge>
           </div>
 
-          <div style={styles.transactionList}>
-            {transactions.map((item) => (
-              <div key={item.id} style={styles.transactionCard}>
-                <div style={styles.transactionIcon}>{item.icon}</div>
-
-                <div style={styles.transactionInfo}>
-                  <h3 style={styles.transactionTitle}>
-                    {item.service} • {item.status}
-                  </h3>
-                  <p style={styles.transactionRoute}>{item.route}</p>
+          <div style={styles.chartArea}>
+            {weeklyData.map((item) => (
+              <button
+                key={item.day}
+                style={styles.barItem}
+                onClick={() => openModal("daily", item)}
+              >
+                <div style={styles.barTrack}>
+                  <div
+                    style={{
+                      ...styles.barFill,
+                      height: `${item.value}%`,
+                    }}
+                  ></div>
                 </div>
-
-                <div style={styles.transactionAmount}>
-                  <h3 style={styles.transactionAmountValue}>{item.amount}</h3>
-                  <p style={styles.transactionAmountTime}>{item.time}</p>
-                </div>
-              </div>
+                <p style={styles.barLabel}>{item.day}</p>
+              </button>
             ))}
           </div>
-        </section>
-      </main>
+        </Card>
+
+        <Card>
+          <div style={styles.bonusIcon}>◎</div>
+          <h2 style={styles.bonusTitle}>Target Bonus</h2>
+          <p style={styles.sectionText}>
+            Selesaikan 20 order lagi untuk mendapatkan bonus tambahan.
+          </p>
+
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill}></div>
+          </div>
+
+          <div style={styles.progressRow}>
+            <span>80/100 Poin</span>
+            <strong>80%</strong>
+          </div>
+
+          <div style={styles.bonusInfo}>
+            <p style={styles.bonusInfoLabel}>Bonus tersedia</p>
+            <h3 style={styles.bonusInfoValue}>Rp 100.000</h3>
+          </div>
+
+          <button
+            style={styles.primaryButton}
+            onClick={() => openModal("bonus")}
+          >
+            Lihat Detail Bonus
+          </button>
+        </Card>
+      </section>
+
+      <Card>
+        <div style={styles.sectionHead}>
+          <div>
+            <h2 style={styles.sectionTitle}>Riwayat Pendapatan</h2>
+            <p style={styles.sectionText}>
+              Transaksi terbaru dari order, bonus, dan insentif.
+            </p>
+          </div>
+
+          <div style={styles.filterGroup}>
+            {["Semua", "Order", "Bonus"].map((filter) => (
+              <button
+                key={filter}
+                style={{
+                  ...styles.filterButton,
+                  ...(activeFilter === filter ? styles.filterActive : {}),
+                }}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={styles.transactionList}>
+          {filteredTransactions.map((item) => (
+            <button
+              key={item.id}
+              style={styles.transactionCard}
+              onClick={() => openModal("transaction", item)}
+            >
+              <div style={styles.transactionIcon}>
+                {item.type === "Bonus" ? "◎" : "▣"}
+              </div>
+
+              <div>
+                <h3 style={styles.transactionTitle}>
+                  {item.service} • {item.status}
+                </h3>
+                <p style={styles.transactionText}>{item.route}</p>
+              </div>
+
+              <div style={styles.transactionAmount}>
+                <h3 style={styles.transactionAmountValue}>{item.amount}</h3>
+                <p style={styles.transactionAmountTime}>{item.time}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {modal && (
+        <div style={styles.modalOverlay} onClick={closeModal}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <button style={styles.modalClose} onClick={closeModal}>
+              ×
+            </button>
+
+            {modal.type === "balance" && (
+              <>
+                <h2 style={styles.modalTitle}>Cairkan Saldo</h2>
+                <p style={styles.modalText}>
+                  Saldo tersedia sebesar <b>Rp 742.500</b>. Pencairan akan
+                  dikirim ke rekening bank yang telah terverifikasi.
+                </p>
+
+                <div style={styles.modalInfoBox}>
+                  <p>Rekening tujuan</p>
+                  <h3>BCA •••• 7890</h3>
+                  <span>a.n. BUDI SANTOSO</span>
+                </div>
+
+                <button
+                  style={styles.primaryButton}
+                  onClick={() => openModal("withdrawSuccess")}
+                >
+                  Konfirmasi Pencairan
+                </button>
+              </>
+            )}
+
+            {modal.type === "withdrawSuccess" && (
+              <>
+                <h2 style={styles.modalTitle}>Pencairan Diproses</h2>
+                <p style={styles.modalText}>
+                  Permintaan pencairan saldo berhasil dibuat. Dana akan diproses
+                  ke rekening terdaftar.
+                </p>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Mengerti
+                </button>
+              </>
+            )}
+
+            {modal.type === "daily" && (
+              <>
+                <h2 style={styles.modalTitle}>Pendapatan Hari {modal.data.day}</h2>
+                <p style={styles.modalText}>
+                  Grafik ini menunjukkan simulasi performa pendapatan pada hari{" "}
+                  <b>{modal.data.day}</b>.
+                </p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Skor Pendapatan" value={`${modal.data.value}%`} />
+                  <InfoBox label="Status" value="Produktif" />
+                  <InfoBox label="Estimasi Order" value="12 order" />
+                  <InfoBox label="Area Teramai" value="Jakarta Selatan" />
+                </div>
+              </>
+            )}
+
+            {modal.type === "bonus" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Target Bonus</h2>
+                <p style={styles.modalText}>
+                  Driver sudah mencapai 80 dari 100 poin. Selesaikan 20 poin
+                  lagi untuk membuka bonus Rp 100.000.
+                </p>
+
+                <div style={styles.progressBarModal}>
+                  <div style={styles.progressFill}></div>
+                </div>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Poin Saat Ini" value="80" />
+                  <InfoBox label="Target" value="100" />
+                  <InfoBox label="Sisa Poin" value="20" />
+                  <InfoBox label="Bonus" value="Rp 100.000" />
+                </div>
+              </>
+            )}
+
+            {modal.type === "transaction" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Transaksi</h2>
+                <p style={styles.modalText}>
+                  Berikut detail transaksi pendapatan driver.
+                </p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="ID Transaksi" value={modal.data.id} />
+                  <InfoBox label="Layanan" value={modal.data.service} />
+                  <InfoBox label="Rute" value={modal.data.route} />
+                  <InfoBox label="Pendapatan" value={modal.data.amount} />
+                  <InfoBox label="Waktu" value={modal.data.time} />
+                  <InfoBox label="Status" value={modal.data.status} />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </DriverLayout>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div style={styles.infoBox}>
+      <p style={styles.infoLabel}>{label}</p>
+      <h3 style={styles.infoValue}>{value}</h3>
     </div>
   );
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "310px 1fr",
-    background: "#f7f9f8",
-    fontFamily: "Arial, sans-serif",
-    color: "#1f2933",
-  },
-
-  sidebar: {
-    minHeight: "100vh",
-    background: "linear-gradient(180deg, #00aa13 0%, #007f0e 100%)",
-    color: "white",
-    padding: "42px 32px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    position: "sticky",
-    top: 0,
-  },
-
-  brand: {
-    marginBottom: "34px",
-  },
-
-  brandTitle: {
-    margin: 0,
-    fontSize: "34px",
-    fontWeight: 900,
-  },
-
-  brandSubtitle: {
-    margin: "8px 0 0",
-    fontSize: "15px",
-    opacity: 0.85,
-  },
-
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-  },
-
-  navItem: {
-    width: "100%",
-    border: "none",
-    background: "transparent",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "17px",
-    fontWeight: 700,
-    padding: "16px 18px",
-    borderRadius: "14px",
-    cursor: "pointer",
-    textAlign: "left",
-    opacity: 0.92,
-  },
-
-  navActive: {
-    background: "rgba(255,255,255,0.18)",
-    opacity: 1,
-  },
-
-  navIcon: {
-    fontSize: "20px",
-    width: "26px",
-  },
-
-  profileCard: {
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "18px",
-    padding: "18px",
-  },
-
-  profileTop: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-  },
-
-  avatar: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    background: "white",
-    color: "#00aa13",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "28px",
-  },
-
-  profileName: {
-    margin: 0,
-    fontSize: "17px",
-    fontWeight: 800,
-  },
-
-  profileRole: {
-    margin: "4px 0 0",
-    opacity: 0.85,
-    fontSize: "14px",
-  },
-
-  profileDivider: {
-    height: "1px",
-    background: "rgba(255,255,255,0.16)",
-    margin: "16px 0",
-  },
-
-  profileMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "14px",
-    fontWeight: 700,
-  },
-
-  metaDivider: {
-    width: "1px",
-    height: "18px",
-    background: "rgba(255,255,255,0.28)",
-  },
-
-  main: {
-    padding: "38px 48px",
-    maxWidth: "1100px",
-    width: "100%",
-    margin: "0 auto",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: "24px",
-    borderBottom: "1px solid #e5e7eb",
-    marginBottom: "28px",
-  },
-
-  pageTitle: {
-    margin: 0,
-    fontSize: "32px",
-    color: "#111827",
-  },
-
-  pageSubtitle: {
-    margin: "8px 0 0",
-    color: "#6b7280",
-    fontSize: "15px",
-  },
-
-  onlineButton: {
-    background: "#00aa13",
-    color: "white",
-    border: "none",
-    borderRadius: "999px",
-    padding: "13px 22px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
-    gap: "16px",
-    marginBottom: "24px",
+    gridTemplateColumns: "1.45fr 1fr 1fr 1fr",
+    gap: "14px",
+    marginBottom: "22px",
   },
 
   balanceCard: {
-    background: "linear-gradient(145deg, #00aa13, #008b10)",
+    background: "#087f23",
     color: "white",
-    borderRadius: "20px",
-    padding: "24px",
+    border: "none",
+    borderRadius: "16px",
+    padding: "20px",
+    textAlign: "left",
+    cursor: "pointer",
   },
 
   balanceLabel: {
     margin: 0,
-    opacity: 0.9,
-    fontSize: "15px",
+    opacity: 0.85,
+    fontSize: "13px",
   },
 
   balanceValue: {
     margin: "8px 0",
-    fontSize: "32px",
+    fontSize: "28px",
+    letterSpacing: "-0.5px",
   },
 
-  balanceNote: {
-    margin: "0 0 22px",
-    opacity: 0.9,
-    fontSize: "14px",
+  balanceText: {
+    margin: "0 0 16px",
+    opacity: 0.88,
+    fontSize: "13px",
     lineHeight: "1.5",
   },
 
-  withdrawButton: {
-    border: "none",
+  withdrawPill: {
+    display: "inline-block",
     background: "white",
-    color: "#00aa13",
-    padding: "12px 18px",
+    color: "#087f23",
     borderRadius: "999px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-
-  summaryCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "18px",
-    padding: "20px",
-  },
-
-  summaryIcon: {
-    fontSize: "28px",
-    marginBottom: "12px",
-  },
-
-  summaryLabel: {
-    margin: 0,
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  summaryValue: {
-    margin: "8px 0 0",
-    color: "#111827",
-    fontSize: "24px",
+    padding: "9px 13px",
+    fontSize: "12px",
+    fontWeight: 900,
   },
 
   contentGrid: {
     display: "grid",
-    gridTemplateColumns: "1.5fr 1fr",
+    gridTemplateColumns: "1.45fr 1fr",
     gap: "22px",
-    marginBottom: "26px",
   },
 
-  chartCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "20px",
-    padding: "24px",
-  },
-
-  sectionHeader: {
+  sectionHead: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    gap: "14px",
+    alignItems: "flex-start",
     marginBottom: "18px",
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: "20px",
-    color: "#111827",
+    fontSize: "18px",
   },
 
-  sectionSubtitle: {
+  sectionText: {
     margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  weekBadge: {
-    background: "#e8f8ed",
-    color: "#00aa13",
-    padding: "8px 12px",
-    borderRadius: "999px",
+    color: "#68716c",
     fontSize: "13px",
-    fontWeight: 800,
+    lineHeight: "1.6",
   },
 
   chartArea: {
-    height: "230px",
+    height: "220px",
     display: "flex",
     alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: "14px",
-    paddingTop: "24px",
+    gap: "12px",
+    paddingTop: "18px",
   },
 
   barItem: {
     flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "10px",
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    cursor: "pointer",
   },
 
   barTrack: {
-    width: "100%",
-    height: "180px",
-    background: "#eef2f1",
+    height: "176px",
+    background: "#eef2ef",
     borderRadius: "999px",
     display: "flex",
     alignItems: "flex-end",
@@ -543,61 +432,49 @@ const styles = {
 
   barFill: {
     width: "100%",
-    background: "linear-gradient(180deg, #00aa13, #008b10)",
+    background: "linear-gradient(180deg, #087f23, #0a6b21)",
     borderRadius: "999px",
   },
 
   barLabel: {
-    margin: 0,
-    color: "#6b7280",
-    fontSize: "13px",
-    fontWeight: 700,
-  },
-
-  bonusCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "20px",
-    padding: "24px",
+    margin: "10px 0 0",
+    color: "#68716c",
+    fontSize: "12px",
+    fontWeight: 800,
+    textAlign: "center",
   },
 
   bonusIcon: {
-    width: "56px",
-    height: "56px",
+    width: "52px",
+    height: "52px",
     borderRadius: "50%",
-    background: "#e8f8ed",
-    color: "#00aa13",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "28px",
-    marginBottom: "16px",
+    fontSize: "24px",
+    fontWeight: 900,
+    marginBottom: "14px",
   },
 
   bonusTitle: {
     margin: 0,
-    fontSize: "22px",
-    color: "#111827",
-  },
-
-  bonusText: {
-    margin: "10px 0 22px",
-    color: "#6b7280",
-    lineHeight: "1.5",
-    fontSize: "14px",
+    fontSize: "20px",
   },
 
   progressBar: {
-    height: "10px",
+    height: "9px",
     background: "#e5e7eb",
     borderRadius: "999px",
     overflow: "hidden",
+    marginTop: "20px",
   },
 
   progressFill: {
     width: "80%",
     height: "100%",
-    background: "#00aa13",
+    background: "#087f23",
     borderRadius: "999px",
   },
 
@@ -606,43 +483,61 @@ const styles = {
     justifyContent: "space-between",
     marginTop: "10px",
     color: "#4b5563",
-    fontSize: "14px",
+    fontSize: "13px",
   },
 
   bonusInfo: {
-    marginTop: "24px",
-    background: "#f7f9f8",
+    background: "#f7f8f5",
     borderRadius: "14px",
-    padding: "16px",
+    padding: "14px",
+    marginTop: "18px",
+    marginBottom: "16px",
   },
 
   bonusInfoLabel: {
     margin: 0,
-    color: "#6b7280",
-    fontSize: "14px",
+    color: "#68716c",
+    fontSize: "12px",
   },
 
   bonusInfoValue: {
     margin: "6px 0 0",
-    color: "#00aa13",
-    fontSize: "22px",
+    color: "#087f23",
+    fontSize: "20px",
   },
 
-  transactionSection: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "20px",
-    padding: "24px",
+  primaryButton: {
+    width: "100%",
+    border: "none",
+    background: "#087f23",
+    color: "white",
+    padding: "13px",
+    borderRadius: "999px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "13px",
+  },
+
+  filterGroup: {
+    display: "flex",
+    gap: "8px",
   },
 
   filterButton: {
-    border: "none",
-    background: "#e8f8ed",
-    color: "#00aa13",
-    padding: "10px 16px",
+    border: "1px solid #dfe5de",
+    background: "white",
+    color: "#4b5563",
     borderRadius: "999px",
+    padding: "8px 12px",
     fontWeight: 800,
+    fontSize: "12px",
     cursor: "pointer",
+  },
+
+  filterActive: {
+    background: "#087f23",
+    color: "white",
+    borderColor: "#087f23",
   },
 
   transactionList: {
@@ -653,39 +548,38 @@ const styles = {
 
   transactionCard: {
     display: "grid",
-    gridTemplateColumns: "54px 1fr auto",
+    gridTemplateColumns: "46px 1fr auto",
     alignItems: "center",
-    gap: "16px",
-    padding: "16px",
-    border: "1px solid #eef2f1",
-    borderRadius: "16px",
+    gap: "14px",
+    border: "1px solid #edf0eb",
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "14px",
+    cursor: "pointer",
+    textAlign: "left",
   },
 
   transactionIcon: {
-    width: "42px",
-    height: "42px",
+    width: "40px",
+    height: "40px",
     borderRadius: "50%",
-    background: "#e8f8ed",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
-  },
-
-  transactionInfo: {
-    minWidth: 0,
+    fontWeight: 900,
   },
 
   transactionTitle: {
     margin: 0,
-    fontSize: "16px",
-    color: "#111827",
+    fontSize: "14px",
   },
 
-  transactionRoute: {
-    margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
+  transactionText: {
+    margin: "5px 0 0",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
   transactionAmount: {
@@ -694,14 +588,96 @@ const styles = {
 
   transactionAmountValue: {
     margin: 0,
-    color: "#00aa13",
-    fontSize: "17px",
+    color: "#087f23",
+    fontSize: "15px",
   },
 
   transactionAmountTime: {
-    margin: "6px 0 0",
-    color: "#6b7280",
+    margin: "5px 0 0",
+    color: "#68716c",
     fontSize: "12px",
+  },
+
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 99,
+  },
+
+  modalCard: {
+    width: "520px",
+    maxWidth: "92vw",
+    background: "white",
+    borderRadius: "18px",
+    padding: "26px",
+    position: "relative",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+  },
+
+  modalClose: {
+    position: "absolute",
+    top: "12px",
+    right: "16px",
+    border: "none",
+    background: "transparent",
+    fontSize: "26px",
+    cursor: "pointer",
+  },
+
+  modalTitle: {
+    margin: "0 0 10px",
+    fontSize: "20px",
+  },
+
+  modalText: {
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.6",
+    marginBottom: "16px",
+  },
+
+  modalInfoBox: {
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "16px",
+    marginBottom: "16px",
+  },
+
+  modalInfoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    marginTop: "12px",
+  },
+
+  infoBox: {
+    background: "#f7f8f5",
+    borderRadius: "13px",
+    padding: "13px",
+  },
+
+  infoLabel: {
+    margin: 0,
+    color: "#68716c",
+    fontSize: "12px",
+  },
+
+  infoValue: {
+    margin: "6px 0 0",
+    color: "#101828",
+    fontSize: "14px",
+  },
+
+  progressBarModal: {
+    height: "10px",
+    background: "#e5e7eb",
+    borderRadius: "999px",
+    overflow: "hidden",
+    marginBottom: "16px",
   },
 };
 

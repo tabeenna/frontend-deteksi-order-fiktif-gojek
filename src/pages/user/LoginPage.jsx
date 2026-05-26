@@ -1,14 +1,72 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import heroImage from "../../assets/gojek-logo.jpeg";
+import { apiRequest } from "../../services/api";
 
 function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
-  function handleLogin(e) {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleChange(e) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  }
+
+  async function handleLogin(e) {
     e.preventDefault();
-    navigate("/driver");
+    setError("");
+    setLoading(true);
+
+    try {
+      // Bersihkan sisa flow pendaftaran supaya tidak nyangkut ke bank/ktp.
+      localStorage.removeItem("gojek_next_route");
+
+      const response = await apiRequest("/login", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+
+      const data = response.data;
+      const role = data.user?.role || "driver";
+
+      localStorage.setItem("gojek_token", data.token);
+      localStorage.setItem("gojek_user", JSON.stringify(data.user));
+      localStorage.setItem("gojek_role", role);
+
+      if (data.driver) {
+        localStorage.setItem("gojek_driver", JSON.stringify(data.driver));
+      }
+
+      // Pastikan setelah login tidak menyimpan next_route dari backend.
+      localStorage.removeItem("gojek_next_route");
+
+      if (role === "superadmin") {
+        navigate("/superadmin");
+        return;
+      }
+
+      if (role === "admin") {
+        navigate("/admin");
+        return;
+      }
+
+      // Driver login berhasil langsung ke dashboard utama.
+      navigate("/driver");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -61,13 +119,19 @@ function LoginPage() {
             </p>
           </div>
 
+          {error && <div style={styles.errorBox}>{error}</div>}
+
           <form onSubmit={handleLogin} style={styles.form}>
             <div style={styles.field}>
               <label style={styles.label}>Email atau Nomor Telepon</label>
               <input
                 style={styles.input}
-                type="text"
-                placeholder="Contoh: 0812345678"
+                type="email"
+                name="email"
+                placeholder="Contoh: driver@example.com"
+                value={form.email}
+                onChange={handleChange}
+                required
               />
             </div>
 
@@ -77,7 +141,11 @@ function LoginPage() {
                 <input
                   style={{ ...styles.input, paddingRight: "48px" }}
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   placeholder="Masukkan kata sandi"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
                 />
 
                 <button
@@ -96,8 +164,8 @@ function LoginPage() {
               </a>
             </div>
 
-            <button type="submit" style={styles.mainButton}>
-              Masuk
+            <button type="submit" style={styles.mainButton} disabled={loading}>
+              {loading ? "Memproses..." : "Masuk"}
             </button>
           </form>
 
@@ -145,7 +213,6 @@ const styles = {
     gap: "22px",
     padding: "48px 70px",
     textAlign: "center",
-    boxSizing: "border-box",
   },
 
   logoBox: {
@@ -191,12 +258,11 @@ const styles = {
   featureCard: {
     width: "220px",
     padding: "22px 18px",
-    border: "1px solid rgba(255, 255, 255, 0.28)",
+    border: "1px solid rgba(255,255,255,0.28)",
     borderRadius: "16px",
-    background: "rgba(255, 255, 255, 0.08)",
+    background: "rgba(255,255,255,0.08)",
     fontWeight: 700,
     lineHeight: "1.5",
-    boxSizing: "border-box",
   },
 
   featureIcon: {
@@ -250,6 +316,16 @@ const styles = {
   alertText: {
     margin: 0,
     fontSize: "15px",
+  },
+
+  errorBox: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    marginBottom: "18px",
   },
 
   form: {

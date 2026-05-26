@@ -1,80 +1,156 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import heroImage from "../../assets/gojek-logo.jpeg";
+import { apiRequest, saveAuthData } from "../../services/api";
 
 function SignUpPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
-  function handleSignUp(e) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleChange(e) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  }
+
+  async function handleSignUp(e) {
     e.preventDefault();
-    alert("Kode OTP telah dikirim.");
-    navigate("/verify-otp");
+    setError("");
+
+    if (!form.name || !form.email || !form.password) {
+      setError("Nama, email, dan kata sandi wajib diisi.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await apiRequest("/register-driver", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          city: "Malang",
+          password: form.password,
+          password_confirmation: form.password,
+        }),
+      });
+
+      saveAuthData(response.data);
+
+      alert("Akun driver berhasil dibuat. Kode OTP simulasi: 123456");
+
+      navigate("/verify-otp");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div style={styles.page}>
       <section style={styles.left}>
-        <div style={styles.logoBox}>
-          <img src={heroImage} alt="Gojek Logo" style={styles.logoImage} />
-        </div>
+  <div style={styles.logoBox}>
+    <img src={heroImage} alt="Gojek Logo" style={styles.logoImage} />
+  </div>
 
-        <h1 style={styles.leftTitle}>
-          Selamat Datang di <br />
-          Gojek Driver
-        </h1>
+  <h1 style={styles.leftTitle}>
+    Selamat Datang di <br />
+    Gojek Driver
+  </h1>
 
-        <p style={styles.leftText}>
-          Bergabunglah dengan jutaan orang lainnya untuk menikmati kemudahan
-          transportasi, pesan antar makanan, dan pembayaran digital dalam satu
-          aplikasi.
-        </p>
+  <p style={styles.leftText}>
+    Bergabunglah dengan jutaan orang lainnya untuk menikmati kemudahan
+    transportasi, pesan antar makanan, dan pembayaran digital dalam satu
+    aplikasi.
+  </p>
 
-        <div style={styles.featureRow}>
-          <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>🚲</div>
-            <div>
-              Layanan Transportasi <br />
-              Terpercaya
-            </div>
-          </div>
+  <div style={styles.featureRow}>
+    <div style={styles.featureCard}>
+      <div style={styles.featureIcon}>🚲</div>
+      <div>
+        Layanan Transportasi <br />
+        Terpercaya
+      </div>
+    </div>
 
-          <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>🍴</div>
-            <div>
-              Pesan Antar Makanan <br />
-              Tercepat
-            </div>
-          </div>
-        </div>
-      </section>
+    <div style={styles.featureCard}>
+      <div style={styles.featureIcon}>🍴</div>
+      <div>
+        Pesan Antar Makanan <br />
+        Tercepat
+      </div>
+    </div>
+  </div>
+</section>
 
       <section style={styles.right}>
         <div style={styles.formWrapper}>
           <h2 style={styles.title}>Daftar Akun Baru</h2>
-          <p style={styles.subtitle}>Silakan lengkapi data diri Anda untuk memulai.</p>
+          <p style={styles.subtitle}>
+            Silakan lengkapi data diri Anda untuk memulai.
+          </p>
 
           <div style={styles.alert}>
             <span>🛡️</span>
             <p style={styles.alertText}>
-              Data Anda dilindungi oleh sistem keamanan untuk menghindari transaksi tidak resmi.
+              Data Anda dilindungi oleh sistem keamanan untuk menghindari
+              transaksi tidak resmi.
             </p>
           </div>
+
+          {error && <div style={styles.errorBox}>{error}</div>}
 
           <form onSubmit={handleSignUp} style={styles.form}>
             <div style={styles.field}>
               <label style={styles.label}>Nama Lengkap</label>
-              <input style={styles.input} type="text" placeholder="Contoh: Budi Sudarsono" />
+              <input
+                style={styles.input}
+                type="text"
+                name="name"
+                placeholder="Contoh: Budi Sudarsono"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div style={styles.field}>
               <label style={styles.label}>Email</label>
-              <input style={styles.input} type="email" placeholder="nama@email.com" />
+              <input
+                style={styles.input}
+                type="email"
+                name="email"
+                placeholder="nama@email.com"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div style={styles.field}>
               <label style={styles.label}>Nomor Telepon</label>
-              <input style={styles.input} type="text" placeholder="+62 812-xxxx-xxxx" />
+              <input
+                style={styles.input}
+                type="text"
+                name="phone"
+                placeholder="+62 812-xxxx-xxxx"
+                value={form.phone}
+                onChange={handleChange}
+              />
             </div>
 
             <div style={styles.field}>
@@ -83,7 +159,11 @@ function SignUpPage() {
                 <input
                   style={{ ...styles.input, paddingRight: "48px" }}
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   placeholder="Min. 8 karakter"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
                 />
 
                 <button
@@ -102,8 +182,8 @@ function SignUpPage() {
               <span style={styles.greenText}>Kebijakan Privasi</span>.
             </p>
 
-            <button type="submit" style={styles.mainButton}>
-              Daftar →
+            <button type="submit" style={styles.mainButton} disabled={loading}>
+              {loading ? "Mendaftarkan..." : "Daftar →"}
             </button>
           </form>
 
@@ -121,72 +201,79 @@ function SignUpPage() {
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    background: "#ffffff",
-    fontFamily: "Arial, sans-serif",
-  },
+  minHeight: "100vh",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  background: "#ffffff",
+  fontFamily: "Arial, sans-serif",
+},
   left: {
-    minHeight: "100vh",
-    background: "#00aa13",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "22px",
-    padding: "48px 70px",
-    textAlign: "center",
-  },
-  logoBox: {
-    width: "170px",
-    height: "170px",
-    background: "#06140a",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "24px",
-    overflow: "hidden",
-    marginBottom: "18px",
-  },
-  logoImage: {
-    width: "110px",
-    height: "110px",
-    objectFit: "contain",
-  },
-  leftTitle: {
-    fontSize: "38px",
-    lineHeight: "1.15",
-    margin: 0,
-    fontWeight: 800,
-  },
-  leftText: {
-    maxWidth: "560px",
-    fontSize: "17px",
-    lineHeight: "1.7",
-    margin: 0,
-    opacity: 0.95,
-  },
-  featureRow: {
-    display: "flex",
-    gap: "20px",
-    marginTop: "12px",
-    justifyContent: "center",
-  },
-  featureCard: {
-    width: "220px",
-    padding: "22px 18px",
-    border: "1px solid rgba(255,255,255,0.28)",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.08)",
-    fontWeight: 700,
-    lineHeight: "1.5",
-  },
-  featureIcon: {
-    fontSize: "28px",
-    marginBottom: "10px",
-  },
+  minHeight: "100vh",
+  background: "#00aa13",
+  color: "white",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "22px",
+  padding: "48px 70px",
+  textAlign: "center",
+},
+
+logoBox: {
+  width: "170px",
+  height: "170px",
+  background: "#06140a",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: "24px",
+  overflow: "hidden",
+  marginBottom: "18px",
+},
+
+logoImage: {
+  width: "110px",
+  height: "110px",
+  objectFit: "contain",
+},
+
+leftTitle: {
+  fontSize: "38px",
+  lineHeight: "1.15",
+  margin: 0,
+  fontWeight: 800,
+},
+
+leftText: {
+  maxWidth: "560px",
+  fontSize: "17px",
+  lineHeight: "1.7",
+  margin: 0,
+  opacity: 0.95,
+},
+
+featureRow: {
+  display: "flex",
+  gap: "20px",
+  marginTop: "12px",
+  justifyContent: "center",
+},
+
+featureCard: {
+  width: "220px",
+  padding: "22px 18px",
+  border: "1px solid rgba(255,255,255,0.28)",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.08)",
+  fontWeight: 700,
+  lineHeight: "1.5",
+},
+
+featureIcon: {
+  fontSize: "28px",
+  marginBottom: "10px",
+},
   right: {
     minHeight: "100vh",
     background: "#ffffff",
@@ -219,12 +306,21 @@ const styles = {
     padding: "14px 16px",
     borderRadius: "10px",
     color: "#1e40af",
-    marginBottom: "26px",
+    marginBottom: "18px",
   },
   alertText: {
     margin: 0,
     fontSize: "15px",
     lineHeight: "1.5",
+  },
+  errorBox: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    marginBottom: "18px",
   },
   form: {
     display: "flex",
@@ -249,6 +345,7 @@ const styles = {
     background: "#f8fafc",
     fontSize: "15px",
     outline: "none",
+    boxSizing: "border-box",
   },
   passwordWrapper: {
     position: "relative",

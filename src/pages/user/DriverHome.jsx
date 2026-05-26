@@ -1,69 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../../services/api";
+import DriverLayout, {
+  Card,
+  StatCard,
+  Badge,
+} from "../../components/driver/DriverLayout";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 function DriverHome() {
   const navigate = useNavigate();
-
-  const [isOnline, setIsOnline] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [modal, setModal] = useState(null);
-  const [selectedArea, setSelectedArea] = useState("Jakarta Selatan");
+  const [selectedArea, setSelectedArea] = useState("Lowokwaru");
 
-  const activities = [
-    {
-      type: "GoRide",
-      title: "Pesanan Selesai",
-      location: "Sudirman ke Thamrin",
-      amount: "+ Rp 24.000",
-      time: "14:20",
-      icon: "🚗",
-      bg: "#e8f8ed",
-      color: "#00aa13",
-    },
-    {
-      type: "GoFood",
-      title: "Pesanan Selesai",
-      location: "Martabak Pecenongan",
-      amount: "+ Rp 18.500",
-      time: "13:45",
-      icon: "🛍️",
-      bg: "#fff1e7",
-      color: "#ff7a1a",
-    },
-    {
-      type: "GoSend",
-      title: "Pesanan Selesai",
-      location: "Kuningan City Mall",
-      amount: "+ Rp 32.000",
-      time: "12:10",
-      icon: "📦",
-      bg: "#eaf1ff",
-      color: "#2878ff",
-    },
-  ];
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const busyAreas = [
-    {
-      name: "Jakarta Selatan",
-      demand: "Sangat Ramai",
-      orders: "32 order tersedia",
-      note: "Area perkantoran dan pusat kuliner sedang ramai.",
-    },
-    {
-      name: "Kuningan",
-      demand: "Ramai",
-      orders: "21 order tersedia",
-      note: "Banyak permintaan GoRide dan GoFood.",
-    },
-    {
-      name: "Thamrin",
-      demand: "Sedang",
-      orders: "14 order tersedia",
-      note: "Permintaan meningkat pada jam pulang kerja.",
-    },
-  ];
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        const response = await apiRequest("/driver/home");
+        setDashboard(response.data);
+      } catch (err) {
+        setError(err.message || "Gagal mengambil data dashboard driver.");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const selectedBusyArea = busyAreas.find((area) => area.name === selectedArea);
+    fetchDashboard();
+  }, []);
 
   function openModal(type, data = null) {
     setModal({ type, data });
@@ -73,355 +52,458 @@ function DriverHome() {
     setModal(null);
   }
 
-  return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div>
-          <div style={styles.brand}>
-            <h1 style={styles.brandTitle}>Gojek</h1>
-            <p style={styles.brandSubtitle}>Driver Portal</p>
-          </div>
+  if (loading) {
+    return (
+      <DriverLayout
+        activeMenu="Home"
+        title="Driver Dashboard"
+        subtitle="Memuat data dashboard driver..."
+      >
+        <Card>
+          <p>Sedang memuat data dashboard...</p>
+        </Card>
+      </DriverLayout>
+    );
+  }
 
-          <nav style={styles.nav}>
-            <button style={{ ...styles.navItem, ...styles.navActive }}>
-              <span style={styles.navIcon}>🏠</span>
-              Home
-            </button>
-
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/orders")}
-            >
-              <span style={styles.navIcon}>📋</span>
-              Orders
-            </button>
-
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/earnings")}
-            >
-              <span style={styles.navIcon}>💵</span>
-              Earnings
-            </button>
-
-            <button
-              style={styles.navItem}
-              onClick={() => navigate("/driver/account")}
-            >
-              <span style={styles.navIcon}>👤</span>
-              Account
-            </button>
-          </nav>
-        </div>
-
-        <div style={styles.profileCard}>
-          <div style={styles.profileTop}>
-            <div style={styles.avatar}>👤</div>
-
-            <div>
-              <h3 style={styles.profileName}>Sudirman</h3>
-              <p style={styles.profileRole}>Driver</p>
-            </div>
-          </div>
-
-          <div style={styles.profileDivider}></div>
-
-          <div style={styles.profileMeta}>
-            <span>⭐ 5.0</span>
-            <span style={styles.metaDivider}></span>
-            <span>🛡️ Terverifikasi</span>
-          </div>
-        </div>
-      </aside>
-
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div style={styles.headerBrand}>
-            <span style={styles.headerLogo}>gojek</span>
-            <span style={styles.headerText}>Driver</span>
-          </div>
-
-          <div style={styles.headerActions}>
-            <button
-              style={{
-                ...styles.onlineButton,
-                background: isOnline ? "#00aa13" : "#9ca3af",
-              }}
-              onClick={() => setIsOnline(!isOnline)}
-            >
-              {isOnline ? "Go Online" : "Offline"}
-              <span style={styles.onlineDot}></span>
-            </button>
-
-            <div style={styles.notificationWrapper}>
-              <button
-                style={styles.bellButton}
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                🔔
-              </button>
-
-              {showNotifications && (
-                <div style={styles.notificationBox}>
-                  <h3 style={styles.notificationTitle}>Notifikasi</h3>
-
-                  <div style={styles.notificationItem}>
-                    <b>Order baru tersedia</b>
-                    <p>Area Jakarta Selatan sedang ramai.</p>
-                  </div>
-
-                  <div style={styles.notificationItem}>
-                    <b>Target bonus 80%</b>
-                    <p>Selesaikan 20 poin lagi untuk bonus tambahan.</p>
-                  </div>
-
-                  <div style={styles.notificationItem}>
-                    <b>Deteksi order aktif</b>
-                    <p>Sistem akan memberi peringatan jika order mencurigakan.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <div style={styles.statusBanner}>
-          <span>{isOnline ? "🟢" : "⚪"}</span>
-          <p>
-            {isOnline
-              ? "Anda sedang online dan siap menerima order."
-              : "Anda sedang offline. Aktifkan Go Online untuk menerima order."}
+  if (error) {
+    return (
+      <DriverLayout
+        activeMenu="Home"
+        title="Driver Dashboard"
+        subtitle="Terjadi kesalahan saat memuat dashboard."
+      >
+        <Card>
+          <p style={{ color: "#b91c1c", fontWeight: 700 }}>{error}</p>
+          <p style={{ color: "#68716c", fontSize: "13px" }}>
+            Kalau muncul Unauthorized, login ulang sebagai driver dulu.
           </p>
-        </div>
+        </Card>
+      </DriverLayout>
+    );
+  }
 
-        <section style={styles.topGrid}>
-          <button
-            style={styles.earningCard}
-            onClick={() => openModal("earning")}
-          >
-            <div style={styles.cardHeader}>
-              <div>
-                <p style={styles.cardLabel}>Pendapatan Hari Ini</p>
-                <h2 style={styles.amount}>Rp 342.500</h2>
-              </div>
+  const summary = dashboard?.summary || {};
+  const bonus = dashboard?.bonus || {};
+  const activities = dashboard?.activities || [];
+  const fraudDetection = dashboard?.fraud_detection || {};
+  const recommendations = dashboard?.recommendations || [];
+  const busyAreas = dashboard?.busy_areas || {};
 
-              <div style={styles.moneyIcon}>💵</div>
-            </div>
+  const selectedAreaData =
+    busyAreas[selectedArea] ||
+    Object.values(busyAreas)[0] || {
+      level: "-",
+      orders: "0 order tersedia",
+      dominant: "-",
+      note: "Data area belum tersedia.",
+    };
 
-            <div style={styles.earningDivider}></div>
+    const mapCenter =
+  selectedAreaData.lat && selectedAreaData.lng
+    ? [selectedAreaData.lat, selectedAreaData.lng]
+    : [-7.9666, 112.6326];
 
-            <div style={styles.earningStats}>
-              <div>
-                <p style={styles.statLabel}>Order Selesai</p>
-                <h3 style={styles.statValue}>14</h3>
-              </div>
-
-              <div style={styles.verticalLine}></div>
-
-              <div>
-                <p style={styles.statLabel}>Insentif</p>
-                <h3 style={{ ...styles.statValue, color: "#00aa13" }}>
-                  + Rp 50.000
-                </h3>
-              </div>
-            </div>
-          </button>
-
-          <button style={styles.bonusCard} onClick={() => openModal("bonus")}>
-            <div style={styles.bonusIcon}>🎯</div>
-            <h3 style={styles.bonusTitle}>Target Bonus</h3>
-            <p style={styles.bonusText}>Dapatkan Rp 100rb lagi</p>
-
-            <div style={styles.progressBar}>
-              <div style={styles.progressFill}></div>
-            </div>
-
-            <p style={styles.bonusPoint}>80/100 Poin</p>
-          </button>
-        </section>
-
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Performa Anda</h2>
-
-          <div style={styles.performanceGrid}>
-            <button
-              style={styles.performanceCard}
-              onClick={() =>
-                openModal("performance", {
-                  title: "Penerimaan Order",
-                  value: "98%",
-                  desc: "Persentase order yang diterima dari seluruh order masuk.",
-                })
-              }
-            >
-              <Ring value="98%" ring="98" />
-              <p style={styles.performanceLabel}>Penerimaan</p>
-            </button>
-
-            <button
-              style={styles.performanceCard}
-              onClick={() =>
-                openModal("performance", {
-                  title: "Rating Driver",
-                  value: "5.0",
-                  desc: "Nilai kepuasan customer terhadap layanan driver.",
-                })
-              }
-            >
-              <Ring value="5.0" ring="90" />
-              <p style={styles.performanceLabel}>Rating</p>
-            </button>
-
-            <button
-              style={styles.performanceCard}
-              onClick={() =>
-                openModal("performance", {
-                  title: "Waktu Aktif",
-                  value: "04:12",
-                  desc: "Durasi driver aktif menerima order hari ini.",
-                })
-              }
-            >
-              <div style={styles.simpleIcon}>⏱️</div>
-              <h3 style={styles.simpleValue}>04:12</h3>
-              <p style={styles.performanceLabel}>Waktu Aktif</p>
-            </button>
-
-            <button
-              style={styles.performanceCard}
-              onClick={() =>
-                openModal("performance", {
-                  title: "Pembatalan",
-                  value: "0%",
-                  desc: "Persentase order yang dibatalkan oleh driver.",
-                })
-              }
-            >
-              <div style={styles.simpleIcon}>✕</div>
-              <h3 style={styles.simpleValue}>0%</h3>
-              <p style={styles.performanceLabel}>Pembatalan</p>
-            </button>
-          </div>
-        </section>
-
-        <section style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Aktivitas Hari Ini</h2>
-            <button
-              style={styles.seeAll}
-              onClick={() => navigate("/driver/orders")}
-            >
-              Lihat Semua ›
-            </button>
-          </div>
-
-          <div style={styles.activityList}>
-            {activities.map((item, index) => (
-              <button
-                key={index}
-                style={styles.activityCard}
-                onClick={() => openModal("activity", item)}
-              >
-                <div
-                  style={{
-                    ...styles.activityIcon,
-                    background: item.bg,
-                    color: item.color,
-                  }}
-                >
-                  {item.icon}
-                </div>
-
-                <div>
-                  <h3 style={styles.activityTitle}>
-                    {item.type} <span>•</span> {item.title}
-                  </h3>
-                  <p style={styles.activityLocation}>{item.location}</p>
-                </div>
-
-                <div style={styles.activityAmount}>
-                  <h3 style={styles.activityAmountValue}>{item.amount}</h3>
-                  <p style={styles.activityAmountTime}>{item.time}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section style={styles.mapSection}>
-          <div style={styles.sectionHeader}>
+  return (
+    <DriverLayout
+      activeMenu="Home"
+      title="Driver Dashboard"
+      subtitle="Ringkasan performa, pendapatan, order, dan rekomendasi area driver di Kota Malang."
+    >
+      <section style={styles.heroGrid}>
+        <button
+          style={styles.earningCard}
+          onClick={() => openModal("earning")}
+        >
+          <div style={styles.cardTop}>
             <div>
-              <h2 style={styles.sectionTitle}>Area Ramai</h2>
-              <p style={styles.sectionSubtitle}>
-                Simulasi area dengan permintaan order paling tinggi.
+              <p style={styles.smallLabel}>Pendapatan Hari Ini</p>
+              <h1 style={styles.bigAmount}>
+                {formatCurrency(summary.today_earning)}
+              </h1>
+              <p style={styles.cardText}>
+                Pendapatan dari {summary.completed_orders || 0} order selesai
+                dan insentif harian.
+              </p>
+            </div>
+
+            <div style={styles.iconCircle}>Rp</div>
+          </div>
+
+          <div style={styles.divider}></div>
+
+          <div style={styles.twoCol}>
+            <div>
+              <p style={styles.muted}>Order Selesai</p>
+              <h3 style={styles.value}>{summary.completed_orders || 0}</h3>
+            </div>
+
+            <div>
+              <p style={styles.muted}>Insentif</p>
+              <h3 style={{ ...styles.value, color: "#087f23" }}>
+                {formatPlusCurrency(summary.incentive)}
+              </h3>
+            </div>
+          </div>
+        </button>
+
+        <button style={styles.bonusCard} onClick={() => openModal("bonus")}>
+          <div style={styles.bonusIcon}>◎</div>
+          <h2 style={styles.bonusTitle}>Target Bonus</h2>
+          <p style={styles.bonusText}>
+            Selesaikan {bonus.remaining_points || 0} poin lagi untuk membuka
+            bonus {formatCurrency(bonus.bonus_amount)}.
+          </p>
+
+          <div style={styles.progress}>
+            <div
+              style={{
+                ...styles.progressFill,
+                width: `${bonus.progress_percent || 0}%`,
+              }}
+            ></div>
+          </div>
+
+          <div style={styles.progressRow}>
+            <span>
+              {bonus.current_points || 0}/{bonus.target_points || 0} Poin
+            </span>
+            <strong>{bonus.progress_percent || 0}%</strong>
+          </div>
+        </button>
+      </section>
+
+      <section style={styles.statGrid}>
+        <button
+          style={styles.statButton}
+          onClick={() =>
+            openModal("performance", {
+              title: "Penerimaan Order",
+              value: `${summary.acceptance_rate || 0}%`,
+              desc: "Persentase order yang diterima dari seluruh order masuk. Nilai ini menunjukkan driver cukup responsif.",
+            })
+          }
+        >
+          <StatCard
+            label="Penerimaan"
+            value={`${summary.acceptance_rate || 0}%`}
+            note="Order diterima"
+          />
+        </button>
+
+        <button
+          style={styles.statButton}
+          onClick={() =>
+            openModal("performance", {
+              title: "Rating Driver",
+              value: summary.rating || "-",
+              desc: "Rating berasal dari penilaian customer setelah order selesai.",
+            })
+          }
+        >
+          <StatCard
+            label="Rating"
+            value={String(summary.rating || "-")}
+            note="Sangat baik"
+          />
+        </button>
+
+        <button
+          style={styles.statButton}
+          onClick={() =>
+            openModal("performance", {
+              title: "Waktu Aktif",
+              value: summary.active_time || "00:00",
+              desc: "Durasi driver aktif dalam sistem hari ini.",
+            })
+          }
+        >
+          <StatCard
+            label="Waktu Aktif"
+            value={summary.active_time || "00:00"}
+            note="Hari ini"
+          />
+        </button>
+
+        <button
+          style={styles.statButton}
+          onClick={() =>
+            openModal("performance", {
+              title: "Pembatalan",
+              value: `${summary.cancellation_rate || 0}%`,
+              desc: "Persentase pembatalan order oleh driver. Semakin rendah, semakin baik.",
+            })
+          }
+        >
+          <StatCard
+            label="Pembatalan"
+            value={`${summary.cancellation_rate || 0}%`}
+            note="Aman"
+            color="#087f23"
+          />
+        </button>
+      </section>
+
+      <section style={styles.contentGrid}>
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Aktivitas Hari Ini</h2>
+              <p style={styles.sectionText}>
+                Riwayat order terbaru yang sudah selesai di area Malang.
               </p>
             </div>
 
             <button
-              style={styles.seeAll}
-              onClick={() =>
-                openModal("map", {
-                  title: selectedBusyArea.name,
-                  desc: selectedBusyArea.note,
-                })
-              }
+              style={styles.softButton}
+              onClick={() => navigate("/driver/orders")}
             >
-              Detail Area ›
+              Lihat Semua
             </button>
           </div>
 
-          <div style={styles.mapCard}>
-            <button
-              style={{ ...styles.mapPoint, left: "60%", top: "45%" }}
-              onClick={() => setSelectedArea("Jakarta Selatan")}
-            >
-              ●
-            </button>
-
-            <button
-              style={{ ...styles.mapPoint, left: "45%", top: "60%" }}
-              onClick={() => setSelectedArea("Kuningan")}
-            >
-              ●
-            </button>
-
-            <button
-              style={{ ...styles.mapPoint, left: "70%", top: "65%" }}
-              onClick={() => setSelectedArea("Thamrin")}
-            >
-              ●
-            </button>
-
-            <div style={styles.mapOverlay}>
-              <span style={styles.pin}>📍</span>
-              <div>
-                <strong>Area Ramai: {selectedBusyArea.name}</strong>
-                <p style={styles.mapText}>
-                  {selectedBusyArea.demand} • {selectedBusyArea.orders}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.areaActions}>
-            {busyAreas.map((area) => (
+          <div style={styles.activityList}>
+            {activities.map((item) => (
               <button
-                key={area.name}
-                style={{
-                  ...styles.areaButton,
-                  ...(selectedArea === area.name ? styles.areaButtonActive : {}),
-                }}
-                onClick={() => setSelectedArea(area.name)}
+                key={item.id}
+                style={styles.activity}
+                onClick={() => openModal("activity", item)}
               >
-                {area.name}
+                <div style={styles.activityIcon}>▣</div>
+
+                <div>
+                  <h3 style={styles.activityTitle}>
+                    {item.service} • {item.title}
+                  </h3>
+                  <p style={styles.activityText}>{item.detail}</p>
+                </div>
+
+                <div style={styles.activityRight}>
+                  <h3>{formatPlusCurrency(item.amount)}</h3>
+                  <p>{item.time}</p>
+                </div>
               </button>
             ))}
           </div>
-        </section>
-      </main>
+        </Card>
+
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Deteksi Order Fiktif</h2>
+              <p style={styles.sectionText}>
+                Sistem memantau skor risiko berdasarkan akun customer, lokasi,
+                pembayaran, dan pola order.
+              </p>
+            </div>
+
+            <Badge>{fraudDetection.status || "Aktif"}</Badge>
+          </div>
+
+          <button style={styles.fraudBox} onClick={() => openModal("fraud")}>
+            <p style={styles.fraudLabel}>Status Proteksi</p>
+            <h3 style={styles.fraudValue}>
+              {fraudDetection.status || "Aktif"}
+            </h3>
+            <p style={styles.sectionText}>
+              {fraudDetection.total_analyzed || 0} order masuk sudah dianalisis
+              hari ini.
+            </p>
+          </button>
+
+          <div style={styles.fraudMiniGrid}>
+            <InfoBox
+              label="Risiko Rendah"
+              value={`${fraudDetection.low_risk || 0} order`}
+            />
+            <InfoBox
+              label="Risiko Sedang"
+              value={`${fraudDetection.medium_risk || 0} order`}
+            />
+            <InfoBox
+              label="Risiko Tinggi"
+              value={`${fraudDetection.high_risk || 0} order`}
+            />
+            <InfoBox
+              label="Auto Cancel"
+              value={`${fraudDetection.auto_cancel || 0} order`}
+            />
+          </div>
+
+          <button
+            style={styles.primaryButton}
+            onClick={() => navigate("/driver/orders")}
+          >
+            Lihat Analisis Order
+          </button>
+        </Card>
+      </section>
+
+      <section style={styles.contentGrid}>
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Rekomendasi Sistem</h2>
+              <p style={styles.sectionText}>
+                Saran otomatis agar driver bisa mengambil keputusan lebih cepat.
+              </p>
+            </div>
+          </div>
+
+          {recommendations.map((item) => (
+            <button
+              key={item.number || item.title}
+              style={styles.recommendationCard}
+              onClick={() =>
+                openModal("recommendation", {
+                  title: item.title,
+                  desc: item.desc,
+                })
+              }
+            >
+              <div style={styles.recommendationIcon}>{item.number}</div>
+              <div>
+                <h3 style={styles.recommendationTitle}>{item.title}</h3>
+                <p style={styles.recommendationText}>{item.short_desc}</p>
+              </div>
+            </button>
+          ))}
+        </Card>
+
+        <Card>
+          <div style={styles.sectionHead}>
+            <div>
+              <h2 style={styles.sectionTitle}>Shortcut Driver</h2>
+              <p style={styles.sectionText}>
+                Akses cepat ke fitur utama dashboard.
+              </p>
+            </div>
+          </div>
+
+          <div style={styles.shortcutGrid}>
+            <button
+              style={styles.shortcutButton}
+              onClick={() => navigate("/driver/orders")}
+            >
+              <span>▤</span>
+              <strong>Orders</strong>
+              <p>Cek order dan risiko</p>
+            </button>
+
+            <button
+              style={styles.shortcutButton}
+              onClick={() => navigate("/driver/earnings")}
+            >
+              <span>▣</span>
+              <strong>Earnings</strong>
+              <p>Lihat pendapatan</p>
+            </button>
+
+            <button
+              style={styles.shortcutButton}
+              onClick={() => navigate("/driver/account")}
+            >
+              <span>◉</span>
+              <strong>Account</strong>
+              <p>Kelola akun</p>
+            </button>
+
+            <button
+              style={styles.shortcutButton}
+              onClick={() => openModal("support")}
+            >
+              <span>?</span>
+              <strong>Bantuan</strong>
+              <p>Hubungi support</p>
+            </button>
+          </div>
+        </Card>
+      </section>
+
+      <Card>
+        <div style={styles.sectionHead}>
+          <div>
+            <h2 style={styles.sectionTitle}>Area Ramai Kota Malang</h2>
+            <p style={styles.sectionText}>
+              Simulasi area dengan permintaan order tertinggi di Malang.
+            </p>
+          </div>
+
+          <button
+            style={styles.softButton}
+            onClick={() => openModal("area", selectedAreaData)}
+          >
+            Detail Area
+          </button>
+        </div>
+
+       <div style={styles.mapCard}>
+  <MapContainer
+    key={selectedArea}
+    center={mapCenter}
+    zoom={13}
+    scrollWheelZoom={false}
+    style={styles.leafletMap}
+  >
+    <TileLayer
+      attribution='&copy; OpenStreetMap contributors'
+      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+
+    {Object.keys(busyAreas).map((areaName) => {
+      const area = busyAreas[areaName];
+
+      if (!area.lat || !area.lng) return null;
+
+      return (
+        <Marker
+          key={areaName}
+          position={[area.lat, area.lng]}
+          eventHandlers={{
+            click: () => setSelectedArea(areaName),
+          }}
+        >
+          <Popup>
+            <strong>{areaName}</strong>
+            <br />
+            {area.level}
+            <br />
+            {area.orders}
+            <br />
+            {area.dominant}
+          </Popup>
+        </Marker>
+      );
+    })}
+  </MapContainer>
+
+  <div style={styles.mapOverlay}>
+    <strong>Area Ramai: {selectedArea}</strong>
+    <p>
+      {selectedAreaData.level} • {selectedAreaData.orders}
+    </p>
+    <span>{selectedAreaData.dominant}</span>
+  </div>
+</div>
+
+        <div style={styles.areaButtons}>
+          {Object.keys(busyAreas).map((item) => (
+            <button
+              key={item}
+              style={{
+                ...styles.areaButton,
+                ...(selectedArea === item ? styles.areaButtonActive : {}),
+              }}
+              onClick={() => setSelectedArea(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </Card>
 
       {modal && (
-        <div style={styles.modalBackdrop} onClick={closeModal}>
+        <div style={styles.modalOverlay} onClick={closeModal}>
           <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <button style={styles.modalClose} onClick={closeModal}>
               ×
@@ -431,29 +513,74 @@ function DriverHome() {
               <>
                 <h2 style={styles.modalTitle}>Detail Pendapatan Hari Ini</h2>
                 <p style={styles.modalText}>
-                  Pendapatan hari ini berasal dari 14 order selesai dan insentif
-                  target harian.
+                  Total pendapatan hari ini berasal dari order selesai dan
+                  insentif target harian.
                 </p>
 
                 <div style={styles.modalInfoGrid}>
-                  <Info label="GoRide" value="Rp 168.000" />
-                  <Info label="GoFood" value="Rp 92.500" />
-                  <Info label="GoSend" value="Rp 32.000" />
-                  <Info label="Insentif" value="Rp 50.000" />
+                  <InfoBox
+                    label="Pendapatan"
+                    value={formatCurrency(summary.today_earning)}
+                  />
+                  <InfoBox
+                    label="Order Selesai"
+                    value={String(summary.completed_orders || 0)}
+                  />
+                  <InfoBox
+                    label="Insentif"
+                    value={formatCurrency(summary.incentive)}
+                  />
+                  <InfoBox
+                    label="Rating"
+                    value={String(summary.rating || "-")}
+                  />
                 </div>
+
+                <button
+                  style={styles.primaryButton}
+                  onClick={() => navigate("/driver/earnings")}
+                >
+                  Buka Halaman Earnings
+                </button>
               </>
             )}
 
             {modal.type === "bonus" && (
               <>
-                <h2 style={styles.modalTitle}>Target Bonus</h2>
+                <h2 style={styles.modalTitle}>Detail Target Bonus</h2>
                 <p style={styles.modalText}>
-                  Anda sudah mencapai 80 dari 100 poin. Selesaikan 20 poin lagi
-                  untuk mendapatkan bonus Rp 100.000.
+                  Driver sudah mencapai {bonus.current_points || 0} dari{" "}
+                  {bonus.target_points || 0} poin. Selesaikan{" "}
+                  {bonus.remaining_points || 0} poin lagi untuk mendapatkan
+                  bonus tambahan {formatCurrency(bonus.bonus_amount)}.
                 </p>
 
-                <div style={styles.progressBarModal}>
-                  <div style={styles.progressFill}></div>
+                <div style={styles.progressModal}>
+                  <div
+                    style={{
+                      ...styles.progressFill,
+                      width: `${bonus.progress_percent || 0}%`,
+                    }}
+                  ></div>
+                </div>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox
+                    label="Poin Saat Ini"
+                    value={String(bonus.current_points || 0)}
+                  />
+                  <InfoBox
+                    label="Target"
+                    value={String(bonus.target_points || 0)}
+                  />
+                  <InfoBox
+                    label="Sisa Poin"
+                    value={String(bonus.remaining_points || 0)}
+                  />
+                  <InfoBox
+                    label="Bonus"
+                    value={formatCurrency(bonus.bonus_amount)}
+                  />
                 </div>
               </>
             )}
@@ -470,57 +597,109 @@ function DriverHome() {
               <>
                 <h2 style={styles.modalTitle}>Detail Aktivitas</h2>
                 <p style={styles.modalText}>
-                  {modal.data.type} berhasil diselesaikan pada pukul{" "}
-                  {modal.data.time}.
+                  Aktivitas ini menunjukkan order yang sudah selesai pada hari
+                  ini.
                 </p>
 
                 <div style={styles.modalInfoGrid}>
-                  <Info label="Layanan" value={modal.data.type} />
-                  <Info label="Lokasi" value={modal.data.location} />
-                  <Info label="Pendapatan" value={modal.data.amount} />
-                  <Info label="Status" value="Selesai" />
+                  <InfoBox label="ID" value={modal.data.id} />
+                  <InfoBox label="Layanan" value={modal.data.service} />
+                  <InfoBox label="Rute" value={modal.data.detail} />
+                  <InfoBox
+                    label="Pendapatan"
+                    value={formatPlusCurrency(modal.data.amount)}
+                  />
+                  <InfoBox label="Waktu" value={modal.data.time} />
+                  <InfoBox label="Risiko" value={modal.data.risk} />
                 </div>
               </>
             )}
 
-            {modal.type === "map" && (
+            {modal.type === "fraud" && (
               <>
-                <h2 style={styles.modalTitle}>Detail Area Ramai</h2>
+                <h2 style={styles.modalTitle}>Deteksi Order Fiktif</h2>
                 <p style={styles.modalText}>
-                  <b>{selectedBusyArea.name}</b> sedang dalam status{" "}
-                  <b>{selectedBusyArea.demand}</b>.
+                  Sistem memberi skor risiko pada setiap order. Risiko rendah
+                  bisa diterima, risiko sedang perlu verifikasi OTP dan QR, lalu
+                  risiko tinggi dibatalkan otomatis.
                 </p>
-                <p style={styles.modalText}>{selectedBusyArea.note}</p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox
+                    label="Total Order"
+                    value={String(fraudDetection.total_analyzed || 0)}
+                  />
+                  <InfoBox
+                    label="Risiko Rendah"
+                    value={String(fraudDetection.low_risk || 0)}
+                  />
+                  <InfoBox
+                    label="Risiko Sedang"
+                    value={String(fraudDetection.medium_risk || 0)}
+                  />
+                  <InfoBox
+                    label="Risiko Tinggi"
+                    value={String(fraudDetection.high_risk || 0)}
+                  />
+                </div>
 
                 <button
-                  style={styles.modalPrimaryButton}
+                  style={styles.primaryButton}
                   onClick={() => navigate("/driver/orders")}
                 >
-                  Lihat Order di Area Ini
+                  Buka Analisis Order
+                </button>
+              </>
+            )}
+
+            {modal.type === "recommendation" && (
+              <>
+                <h2 style={styles.modalTitle}>{modal.data.title}</h2>
+                <p style={styles.modalText}>{modal.data.desc}</p>
+              </>
+            )}
+
+            {modal.type === "area" && (
+              <>
+                <h2 style={styles.modalTitle}>Detail Area Ramai Malang</h2>
+                <p style={styles.modalText}>
+                  Area <b>{selectedArea}</b> sedang berada pada status{" "}
+                  <b>{selectedAreaData.level}</b>.
+                </p>
+
+                <div style={styles.modalInfoGrid}>
+                  <InfoBox label="Area" value={selectedArea} />
+                  <InfoBox label="Status" value={selectedAreaData.level} />
+                  <InfoBox label="Order" value={selectedAreaData.orders} />
+                  <InfoBox label="Dominan" value={selectedAreaData.dominant} />
+                </div>
+
+                <p style={styles.modalText}>{selectedAreaData.note}</p>
+              </>
+            )}
+
+            {modal.type === "support" && (
+              <>
+                <h2 style={styles.modalTitle}>Bantuan Driver</h2>
+                <p style={styles.modalText}>
+                  Fitur bantuan ini merupakan simulasi. Pada sistem asli,
+                  driver dapat menghubungi admin atau support jika ada kendala
+                  order, akun, atau pembayaran.
+                </p>
+
+                <button style={styles.primaryButton} onClick={closeModal}>
+                  Mengerti
                 </button>
               </>
             )}
           </div>
         </div>
       )}
-    </div>
+    </DriverLayout>
   );
 }
 
-function Ring({ value, ring }) {
-  return (
-    <div
-      style={{
-        ...styles.ring,
-        background: `conic-gradient(#00aa13 0 ${ring}%, #e8f5e9 ${ring}% 100%)`,
-      }}
-    >
-      <div style={styles.ringInner}>{value}</div>
-    </div>
-  );
-}
-
-function Info({ label, value }) {
+function InfoBox({ label, value }) {
   return (
     <div style={styles.infoBox}>
       <p style={styles.infoLabel}>{label}</p>
@@ -529,576 +708,425 @@ function Info({ label, value }) {
   );
 }
 
+function formatCurrency(value) {
+  if (typeof value === "string" && value.includes("Rp")) {
+    return value;
+  }
+
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+}
+
+function formatPlusCurrency(value) {
+  if (typeof value === "string") {
+    return value.startsWith("+") ? value : `+ ${value}`;
+  }
+
+  return `+ Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+}
+
 const styles = {
-  page: {
-    minHeight: "100vh",
+  heroGrid: {
     display: "grid",
-    gridTemplateColumns: "310px 1fr",
-    background: "#f7f9f8",
-    fontFamily: "Arial, sans-serif",
-    color: "#1f2933",
-  },
-
-  sidebar: {
-    minHeight: "100vh",
-    background: "linear-gradient(180deg, #00aa13 0%, #007f0e 100%)",
-    color: "white",
-    padding: "42px 32px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    position: "sticky",
-    top: 0,
-  },
-
-  brandTitle: {
-    margin: 0,
-    fontSize: "34px",
-    fontWeight: 900,
-  },
-
-  brandSubtitle: {
-    margin: "8px 0 34px",
-    fontSize: "15px",
-    opacity: 0.85,
-  },
-
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-  },
-
-  navItem: {
-    width: "100%",
-    border: "none",
-    background: "transparent",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "17px",
-    fontWeight: 700,
-    padding: "16px 18px",
-    borderRadius: "14px",
-    cursor: "pointer",
-    textAlign: "left",
-    opacity: 0.92,
-  },
-
-  navActive: {
-    background: "rgba(255,255,255,0.18)",
-    opacity: 1,
-  },
-
-  navIcon: {
-    fontSize: "20px",
-    width: "26px",
-  },
-
-  profileCard: {
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "18px",
-    padding: "18px",
-  },
-
-  profileTop: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-  },
-
-  avatar: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    background: "white",
-    color: "#00aa13",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "28px",
-  },
-
-  profileName: {
-    margin: 0,
-    fontSize: "17px",
-    fontWeight: 800,
-  },
-
-  profileRole: {
-    margin: "4px 0 0",
-    opacity: 0.85,
-    fontSize: "14px",
-  },
-
-  profileDivider: {
-    height: "1px",
-    background: "rgba(255,255,255,0.16)",
-    margin: "16px 0",
-  },
-
-  profileMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    fontSize: "14px",
-    fontWeight: 700,
-  },
-
-  metaDivider: {
-    width: "1px",
-    height: "18px",
-    background: "rgba(255,255,255,0.28)",
-  },
-
-  main: {
-    padding: "38px 48px 60px",
-    maxWidth: "1100px",
-    width: "100%",
-    margin: "0 auto",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: "24px",
-    borderBottom: "1px solid #e5e7eb",
-    marginBottom: "18px",
-  },
-
-  headerBrand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-
-  headerLogo: {
-    color: "#00aa13",
-    fontSize: "24px",
-    fontWeight: 900,
-  },
-
-  headerText: {
-    color: "#6b7280",
-    fontSize: "16px",
-  },
-
-  headerActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-  },
-
-  onlineButton: {
-    color: "white",
-    border: "none",
-    borderRadius: "999px",
-    padding: "13px 20px",
-    fontSize: "15px",
-    fontWeight: 800,
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    cursor: "pointer",
-    boxShadow: "0 8px 20px rgba(0,170,19,0.18)",
-  },
-
-  onlineDot: {
-    width: "22px",
-    height: "22px",
-    borderRadius: "50%",
-    background: "white",
-    display: "inline-block",
-  },
-
-  bellButton: {
-    border: "none",
-    background: "transparent",
-    fontSize: "22px",
-    cursor: "pointer",
-  },
-
-  notificationWrapper: {
-    position: "relative",
-  },
-
-  notificationBox: {
-    position: "absolute",
-    top: "42px",
-    right: 0,
-    width: "320px",
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "16px",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.12)",
-    padding: "16px",
-    zIndex: 20,
-  },
-
-  notificationTitle: {
-    margin: "0 0 12px",
-    color: "#111827",
-  },
-
-  notificationItem: {
-    borderBottom: "1px solid #eef2f1",
-    padding: "10px 0",
-    color: "#374151",
-  },
-
-  statusBanner: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "14px",
-    padding: "14px 16px",
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    marginBottom: "24px",
-  },
-
-  topGrid: {
-    display: "grid",
-    gridTemplateColumns: "1.45fr 1fr",
-    gap: "24px",
-    marginBottom: "34px",
+    gridTemplateColumns: "1.4fr 1fr",
+    gap: "22px",
+    marginBottom: "22px",
   },
 
   earningCard: {
-    background: "white",
-    border: "1px solid #dde3df",
+    background: "#ffffff",
+    border: "1px solid #dfe5de",
     borderRadius: "18px",
-    padding: "26px 30px",
-    textAlign: "left",
+    padding: "24px",
     cursor: "pointer",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+    textAlign: "left",
   },
 
-  cardHeader: {
+  cardTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    gap: "18px",
   },
 
-  cardLabel: {
+  smallLabel: {
     margin: 0,
-    color: "#6b7280",
-    fontSize: "15px",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
-  amount: {
+  bigAmount: {
+    margin: "10px 0 0",
+    fontSize: "32px",
+    letterSpacing: "-0.6px",
+  },
+
+  cardText: {
     margin: "8px 0 0",
-    fontSize: "30px",
-    color: "#111827",
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.6",
   },
 
-  moneyIcon: {
-    background: "#e8f8ed",
-    color: "#00aa13",
-    borderRadius: "10px",
-    padding: "10px",
-    fontSize: "22px",
+  iconCircle: {
+    width: "52px",
+    height: "52px",
+    borderRadius: "50%",
+    background: "#e6f3e9",
+    color: "#087f23",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 900,
   },
 
-  earningDivider: {
+  divider: {
     height: "1px",
-    background: "#d7ded9",
+    background: "#dfe5de",
     margin: "22px 0",
   },
 
-  earningStats: {
+  twoCol: {
     display: "grid",
-    gridTemplateColumns: "1fr 1px 1fr",
-    gap: "24px",
-    alignItems: "center",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "18px",
   },
 
-  verticalLine: {
-    width: "1px",
-    height: "54px",
-    background: "#d7ded9",
-  },
-
-  statLabel: {
+  muted: {
     margin: 0,
-    color: "#6b7280",
-    fontSize: "15px",
+    color: "#68716c",
+    fontSize: "13px",
   },
 
-  statValue: {
+  value: {
     margin: "6px 0 0",
     fontSize: "18px",
-    color: "#111827",
   },
 
   bonusCard: {
-    background: "linear-gradient(145deg, #00aa13, #008b10)",
+    background: "#087f23",
     color: "white",
     border: "none",
     borderRadius: "18px",
-    padding: "26px",
+    padding: "24px",
     textAlign: "center",
     cursor: "pointer",
-    boxShadow: "0 14px 32px rgba(0,170,19,0.2)",
   },
 
   bonusIcon: {
-    fontSize: "38px",
-    marginBottom: "12px",
+    fontSize: "32px",
+    marginBottom: "14px",
   },
 
   bonusTitle: {
     margin: 0,
-    fontSize: "18px",
+    fontSize: "20px",
   },
 
   bonusText: {
     margin: "10px 0 20px",
-    opacity: 0.95,
+    fontSize: "14px",
+    opacity: 0.9,
+    lineHeight: "1.5",
   },
 
-  progressBar: {
+  progress: {
     height: "8px",
-    background: "rgba(255,255,255,0.22)",
+    background: "rgba(255,255,255,0.25)",
     borderRadius: "999px",
     overflow: "hidden",
-    marginBottom: "16px",
+    marginBottom: "14px",
   },
 
   progressFill: {
     width: "80%",
     height: "100%",
     background: "white",
-    borderRadius: "999px",
   },
 
-  bonusPoint: {
-    margin: 0,
-    fontWeight: 800,
-  },
-
-  section: {
-    marginBottom: "32px",
-  },
-
-  sectionHeader: {
+  progressRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    fontSize: "13px",
+  },
+
+  statGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "14px",
+    marginBottom: "22px",
+  },
+
+  statButton: {
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    textAlign: "left",
+    cursor: "pointer",
+  },
+
+  contentGrid: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 1fr",
+    gap: "22px",
+    marginBottom: "22px",
+  },
+
+  sectionHead: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    marginBottom: "16px",
   },
 
   sectionTitle: {
-    margin: "0 0 18px",
-    fontSize: "20px",
-    color: "#111827",
-  },
-
-  sectionSubtitle: {
-    margin: "0 0 8px",
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  seeAll: {
-    border: "none",
-    background: "transparent",
-    color: "#00aa13",
-    fontSize: "15px",
-    fontWeight: 800,
-    cursor: "pointer",
-    marginBottom: "18px",
-  },
-
-  performanceGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "16px",
-  },
-
-  performanceCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "16px",
-    padding: "22px 16px",
-    minHeight: "140px",
-    textAlign: "center",
-    cursor: "pointer",
-  },
-
-  ring: {
-    width: "76px",
-    height: "76px",
-    borderRadius: "50%",
-    margin: "0 auto 12px",
-    padding: "8px",
-  },
-
-  ringInner: {
-    width: "100%",
-    height: "100%",
-    borderRadius: "50%",
-    background: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-    fontWeight: 800,
-  },
-
-  simpleIcon: {
-    fontSize: "34px",
-    marginBottom: "10px",
-  },
-
-  simpleValue: {
-    margin: "0 0 8px",
-    fontSize: "20px",
-  },
-
-  performanceLabel: {
     margin: 0,
-    color: "#6b7280",
-    fontSize: "15px",
+    fontSize: "18px",
+  },
+
+  sectionText: {
+    margin: "6px 0 0",
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.6",
+  },
+
+  softButton: {
+    border: "none",
+    background: "#e6f3e9",
+    color: "#087f23",
+    borderRadius: "999px",
+    padding: "9px 13px",
+    fontWeight: 900,
+    fontSize: "12px",
+    cursor: "pointer",
+    height: "fit-content",
   },
 
   activityList: {
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
     gap: "12px",
   },
 
-  activityCard: {
-    background: "white",
-    border: "1px solid #dde3df",
-    borderRadius: "16px",
-    padding: "16px 20px",
+  activity: {
     display: "grid",
-    gridTemplateColumns: "54px 1fr auto",
+    gridTemplateColumns: "46px 1fr auto",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
+    border: "1px solid #edf0eb",
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "14px",
     cursor: "pointer",
     textAlign: "left",
   },
 
   activityIcon: {
-    width: "42px",
-    height: "42px",
+    width: "40px",
+    height: "40px",
     borderRadius: "50%",
+    background: "#e6f3e9",
+    color: "#087f23",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
+    fontWeight: 900,
   },
 
   activityTitle: {
     margin: 0,
-    fontSize: "16px",
-    color: "#111827",
-  },
-
-  activityLocation: {
-    margin: "6px 0 0",
-    color: "#6b7280",
     fontSize: "14px",
   },
 
-  activityAmount: {
-    textAlign: "right",
-  },
-
-  activityAmountValue: {
-    margin: 0,
-    color: "#00aa13",
-    fontSize: "17px",
-  },
-
-  activityAmountTime: {
-    margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "12px",
-  },
-
-  mapSection: {
-    marginBottom: "32px",
-  },
-
-  mapCard: {
-    height: "230px",
-    borderRadius: "18px",
-    border: "1px solid #dde3df",
-    overflow: "hidden",
-    position: "relative",
-    background:
-      "linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), repeating-linear-gradient(35deg, #d8dedb 0 2px, transparent 2px 38px), repeating-linear-gradient(125deg, #d8dedb 0 2px, transparent 2px 46px)",
-  },
-
-  mapPoint: {
-    position: "absolute",
-    transform: "translate(-50%, -50%)",
-    border: "4px solid white",
-    width: "28px",
-    height: "28px",
-    borderRadius: "50%",
-    background: "#00aa13",
-    color: "#00aa13",
-    cursor: "pointer",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-  },
-
-  mapOverlay: {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    background: "white",
-    borderRadius: "14px",
-    padding: "18px 28px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
-    fontSize: "16px",
-  },
-
-  mapText: {
-    margin: "4px 0 0",
-    color: "#6b7280",
+  activityText: {
+    margin: "5px 0 0",
+    color: "#68716c",
     fontSize: "13px",
   },
 
-  pin: {
-    color: "#00aa13",
+  activityRight: {
+    textAlign: "right",
+    color: "#087f23",
+    fontSize: "13px",
   },
 
-  areaActions: {
+  fraudBox: {
+    width: "100%",
+    border: "none",
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "18px",
+    marginBottom: "14px",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  fraudLabel: {
+    margin: 0,
+    color: "#68716c",
+    fontSize: "13px",
+  },
+
+  fraudValue: {
+    margin: "8px 0",
+    color: "#087f23",
+    fontSize: "26px",
+  },
+
+  fraudMiniGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    marginBottom: "14px",
+  },
+
+  primaryButton: {
+    width: "100%",
+    border: "none",
+    background: "#087f23",
+    color: "white",
+    borderRadius: "999px",
+    padding: "13px",
+    fontWeight: 900,
+    cursor: "pointer",
+    fontSize: "13px",
+    marginTop: "10px",
+  },
+
+  recommendationCard: {
+    width: "100%",
+    border: "1px solid #edf0eb",
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "14px",
+    display: "grid",
+    gridTemplateColumns: "40px 1fr",
+    gap: "12px",
+    cursor: "pointer",
+    textAlign: "left",
+    marginBottom: "12px",
+  },
+
+  recommendationIcon: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    background: "#e6f3e9",
+    color: "#087f23",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 900,
+  },
+
+  recommendationTitle: {
+    margin: 0,
+    fontSize: "14px",
+  },
+
+  recommendationText: {
+    margin: "5px 0 0",
+    color: "#68716c",
+    fontSize: "13px",
+    lineHeight: "1.5",
+  },
+
+  shortcutGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+  },
+
+  shortcutButton: {
+    border: "1px solid #edf0eb",
+    background: "#f7f8f5",
+    borderRadius: "14px",
+    padding: "16px",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  mapCard: {
+  height: "320px",
+  position: "relative",
+  borderRadius: "16px",
+  overflow: "hidden",
+  border: "1px solid #dfe5de",
+},
+
+leafletMap: {
+  height: "100%",
+  width: "100%",
+  zIndex: 1,
+},
+
+  mapPoint: {
+    position: "absolute",
+    width: "24px",
+    height: "24px",
+    borderRadius: "50%",
+    border: "4px solid white",
+    background: "#087f23",
+    cursor: "pointer",
+    transform: "translate(-50%, -50%)",
+    boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
+  },
+
+  mapOverlay: {
+  position: "absolute",
+  left: "50%",
+  top: "50%",
+  transform: "translate(-50%, -50%)",
+  background: "white",
+  borderRadius: "14px",
+  padding: "16px 22px",
+  boxShadow: "0 14px 30px rgba(0,0,0,0.14)",
+  fontSize: "13px",
+  minWidth: "260px",
+  zIndex: 500,
+},
+
+  areaButtons: {
     display: "flex",
     gap: "10px",
     marginTop: "14px",
   },
 
   areaButton: {
-    border: "1px solid #dde3df",
+    border: "1px solid #dfe5de",
     background: "white",
-    color: "#374151",
     borderRadius: "999px",
     padding: "10px 14px",
     cursor: "pointer",
     fontWeight: 700,
+    fontSize: "12px",
   },
 
   areaButtonActive: {
-    background: "#00aa13",
+    background: "#087f23",
     color: "white",
-    border: "1px solid #00aa13",
   },
 
-  modalBackdrop: {
+  infoBox: {
+    background: "#f7f8f5",
+    borderRadius: "13px",
+    padding: "13px",
+  },
+
+  infoLabel: {
+    margin: 0,
+    color: "#68716c",
+    fontSize: "12px",
+  },
+
+  infoValue: {
+    margin: "6px 0 0",
+    color: "#101828",
+    fontSize: "14px",
+  },
+
+  modalOverlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(15,23,42,0.45)",
+    background: "rgba(15, 23, 42, 0.45)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1106,84 +1134,56 @@ const styles = {
   },
 
   modalCard: {
-    width: "520px",
+    width: "540px",
     maxWidth: "92vw",
     background: "white",
-    borderRadius: "22px",
-    padding: "28px",
+    borderRadius: "18px",
+    padding: "26px",
     position: "relative",
     boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
   },
 
   modalClose: {
     position: "absolute",
-    right: "18px",
-    top: "14px",
+    top: "12px",
+    right: "16px",
     border: "none",
     background: "transparent",
-    fontSize: "28px",
+    fontSize: "26px",
     cursor: "pointer",
   },
 
   modalTitle: {
-    margin: "0 0 12px",
-    color: "#111827",
+    margin: "0 0 10px",
+    fontSize: "20px",
   },
 
   modalText: {
-    color: "#4b5563",
+    color: "#68716c",
+    fontSize: "13px",
     lineHeight: "1.6",
-  },
-
-  modalBigValue: {
-    color: "#00aa13",
-    fontSize: "42px",
-    margin: "8px 0",
+    marginBottom: "16px",
   },
 
   modalInfoGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginTop: "18px",
+    gap: "10px",
+    marginTop: "14px",
   },
 
-  infoBox: {
-    background: "#f7f9f8",
-    borderRadius: "14px",
-    padding: "14px",
+  modalBigValue: {
+    margin: "8px 0 12px",
+    fontSize: "38px",
+    color: "#087f23",
   },
 
-  infoLabel: {
-    margin: 0,
-    color: "#6b7280",
-    fontSize: "13px",
-  },
-
-  infoValue: {
-    margin: "6px 0 0",
-    color: "#111827",
-    fontSize: "16px",
-  },
-
-  progressBarModal: {
-    height: "12px",
+  progressModal: {
+    height: "10px",
     background: "#e5e7eb",
     borderRadius: "999px",
     overflow: "hidden",
-    marginTop: "20px",
-  },
-
-  modalPrimaryButton: {
-    width: "100%",
-    border: "none",
-    background: "#00aa13",
-    color: "white",
-    padding: "14px",
-    borderRadius: "999px",
-    fontWeight: 800,
-    cursor: "pointer",
-    marginTop: "18px",
+    marginBottom: "16px",
   },
 };
 

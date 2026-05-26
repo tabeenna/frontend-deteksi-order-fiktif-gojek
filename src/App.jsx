@@ -11,9 +11,9 @@ import DriverOrdersPage from "./pages/user/DriverOrdersPage";
 import DriverHome from "./pages/user/DriverHome";
 import CustomerHome from "./pages/user/CustomerHome";
 import CustomerOrder from "./pages/user/CustomerOrder";
-import AdminDashboard from "./pages/AdminDashboard";
 import DriverEarningsPage from "./pages/user/DriverEarningsPage";
 import DriverAccountPage from "./pages/user/DriverAccountPage";
+import DriverHistoryPage from "./pages/user/DriverHistoryPage";
 
 function App() {
   return (
@@ -21,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/driver/earnings" element={<DriverEarningsPage />} />
+        <Route path="/driver/history" element={<DriverHistoryPage />} />
         <Route path="/driver/orders" element={<DriverOrdersPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
@@ -32,8 +33,10 @@ function App() {
         <Route path="/driver" element={<DriverHome />} />
         <Route path="/customer" element={<CustomerHome />} />
         <Route path="/customer/order" element={<CustomerOrder />} />
-        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/driver/account" element={<DriverAccountPage />} />
+        <Route path="/" element={<LoginPage />} /> 
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/driver" element={<DriverHome />} />
       </Routes>
     </BrowserRouter>
   );

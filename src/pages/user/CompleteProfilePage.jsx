@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import heroImage from "../../assets/gojek-logo.jpeg";
+import { apiRequest, saveAuthData } from "../../services/api";
 
 function CompleteProfilePage() {
   const navigate = useNavigate();
@@ -12,38 +13,112 @@ function CompleteProfilePage() {
   const [plateNumber, setPlateNumber] = useState("");
   const [year, setYear] = useState("");
 
-  function handleSubmit(e) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const cityOptions = [
+    "Malang",
+    "Batu",
+    "Surabaya",
+    "Jakarta",
+    "Bandung",
+    "Yogyakarta",
+    "Kediri",
+    "Blitar",
+    "Pasuruan",
+    "Sidoarjo",
+    "Madiun",
+    "Semarang",
+  ];
+
+  const motorBrands = ["Honda", "Yamaha", "Suzuki", "Kawasaki", "Vespa"];
+  const carBrands = ["Toyota", "Honda", "Daihatsu", "Suzuki", "Mitsubishi", "Wuling"];
+
+  const brandOptions = vehicleType === "goride" ? motorBrands : carBrands;
+
+  function handleVehicleTypeChange(type) {
+    setVehicleType(type);
+    setBrand("");
+    setModel("");
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
 
     if (!city || !vehicleType || !brand || !model || !plateNumber || !year) {
-      alert("Mohon lengkapi semua data terlebih dahulu.");
+      setError("Mohon lengkapi semua data terlebih dahulu.");
       return;
     }
 
-    alert("Data operasional dan kendaraan berhasil disimpan.");
-    navigate("/upload-ktp");
+    setLoading(true);
+
+    try {
+      const response = await apiRequest("/driver/complete-profile", {
+        method: "POST",
+        body: JSON.stringify({
+          operational_city: city,
+          vehicle_type: vehicleType,
+          vehicle_brand: brand,
+          vehicle_model: model,
+          plate_number: plateNumber,
+          vehicle_year: year,
+        }),
+      });
+
+      saveAuthData(response.data);
+
+      navigate(response.data.next_route || "/upload-ktp");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div style={styles.page}>
       <section style={styles.left}>
-        <div style={styles.logoBox}>
-          <img src={heroImage} alt="Gojek Logo" style={styles.logoImage} />
-        </div>
+  <div style={styles.logoBox}>
+    <img src={heroImage} alt="Gojek Logo" style={styles.logoImage} />
+  </div>
 
-        <h1 style={styles.leftTitle}>
-          Lengkapi Data <br />
-          Mitra Driver
-        </h1>
+  <h1 style={styles.leftTitle}>
+    Selamat Datang di <br />
+    Gojek Driver
+  </h1>
 
-        <p style={styles.leftText}>
-          Tentukan kota operasional, pilih jenis kendaraan, dan isi detail kendaraan Anda.
-        </p>
-      </section>
+  <p style={styles.leftText}>
+    Bergabunglah dengan jutaan orang lainnya untuk menikmati kemudahan
+    transportasi, pesan antar makanan, dan pembayaran digital dalam satu
+    aplikasi.
+  </p>
+
+  <div style={styles.featureRow}>
+    <div style={styles.featureCard}>
+      <div style={styles.featureIcon}>🚲</div>
+      <div>
+        Layanan Transportasi <br />
+        Terpercaya
+      </div>
+    </div>
+
+    <div style={styles.featureCard}>
+      <div style={styles.featureIcon}>🍴</div>
+      <div>
+        Pesan Antar Makanan <br />
+        Tercepat
+      </div>
+    </div>
+  </div>
+</section>
 
       <section style={styles.right}>
         <div style={styles.formWrapper}>
-          <button style={styles.backButton} onClick={() => navigate("/verify-otp")}>
+          <button
+            style={styles.backButton}
+            onClick={() => navigate("/verify-otp")}
+          >
             ← Kembali
           </button>
 
@@ -52,17 +127,25 @@ function CompleteProfilePage() {
             Isi kota operasional dan data kendaraan Anda dalam satu langkah.
           </p>
 
+          {error && <div style={styles.errorBox}>{error}</div>}
+
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.field}>
               <label style={styles.label}>Kota Operasional</label>
-              <select style={styles.input} value={city} onChange={(e) => setCity(e.target.value)}>
-                <option value="">Pilih kota operasional</option>
-                <option value="Malang">Malang</option>
-                <option value="Surabaya">Surabaya</option>
-                <option value="Jakarta">Jakarta</option>
-                <option value="Bandung">Bandung</option>
-                <option value="Yogyakarta">Yogyakarta</option>
-              </select>
+              <input
+                style={styles.input}
+                type="text"
+                list="city-options"
+                placeholder="Pilih atau ketik kota operasional"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+
+              <datalist id="city-options">
+                {cityOptions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
             </div>
 
             <div style={styles.field}>
@@ -72,9 +155,11 @@ function CompleteProfilePage() {
                 <div
                   style={{
                     ...styles.vehicleCard,
-                    ...(vehicleType === "goride" ? styles.vehicleCardActive : {}),
+                    ...(vehicleType === "goride"
+                      ? styles.vehicleCardActive
+                      : {}),
                   }}
-                  onClick={() => setVehicleType("goride")}
+                  onClick={() => handleVehicleTypeChange("goride")}
                 >
                   <div style={styles.vehicleIcon}>🛵</div>
                   <div style={styles.vehicleTitle}>GoRide</div>
@@ -84,9 +169,11 @@ function CompleteProfilePage() {
                 <div
                   style={{
                     ...styles.vehicleCard,
-                    ...(vehicleType === "gocar" ? styles.vehicleCardActive : {}),
+                    ...(vehicleType === "gocar"
+                      ? styles.vehicleCardActive
+                      : {}),
                   }}
-                  onClick={() => setVehicleType("gocar")}
+                  onClick={() => handleVehicleTypeChange("gocar")}
                 >
                   <div style={styles.vehicleIcon}>🚗</div>
                   <div style={styles.vehicleTitle}>GoCar</div>
@@ -100,30 +187,33 @@ function CompleteProfilePage() {
                 Detail Kendaraan {vehicleType === "goride" ? "Motor" : "Mobil"}
               </label>
 
-              <select style={styles.input} value={brand} onChange={(e) => setBrand(e.target.value)}>
-                <option value="">
-                  {vehicleType === "goride" ? "Pilih merek motor" : "Pilih merek mobil"}
-                </option>
+              <input
+                style={styles.input}
+                type="text"
+                list="brand-options"
+                placeholder={
+                  vehicleType === "goride"
+                    ? "Pilih atau ketik merek motor"
+                    : "Pilih atau ketik merek mobil"
+                }
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+              />
 
-                {vehicleType === "goride" ? (
-                  <>
-                    <option value="Honda">Honda</option>
-                    <option value="Yamaha">Yamaha</option>
-                    <option value="Suzuki">Suzuki</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Toyota">Toyota</option>
-                    <option value="Honda">Honda</option>
-                    <option value="Daihatsu">Daihatsu</option>
-                  </>
-                )}
-              </select>
+              <datalist id="brand-options">
+                {brandOptions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
 
               <input
                 style={styles.input}
                 type="text"
-                placeholder={vehicleType === "goride" ? "Contoh: Beat / Vario" : "Contoh: Avanza / Brio"}
+                placeholder={
+                  vehicleType === "goride"
+                    ? "Contoh: Beat / Vario"
+                    : "Contoh: Avanza / Brio"
+                }
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
               />
@@ -133,11 +223,17 @@ function CompleteProfilePage() {
                 type="text"
                 placeholder="Nomor plat kendaraan"
                 value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value)}
+                onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
               />
 
-              <select style={styles.input} value={year} onChange={(e) => setYear(e.target.value)}>
+              <select
+                style={styles.input}
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+              >
                 <option value="">Pilih tahun kendaraan</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
                 <option value="2024">2024</option>
                 <option value="2023">2023</option>
                 <option value="2022">2022</option>
@@ -146,8 +242,8 @@ function CompleteProfilePage() {
               </select>
             </div>
 
-            <button type="submit" style={styles.mainButton}>
-              Simpan & Lanjut →
+            <button type="submit" style={styles.mainButton} disabled={loading}>
+              {loading ? "Menyimpan..." : "Simpan & Lanjut →"}
             </button>
           </form>
         </div>
@@ -158,53 +254,79 @@ function CompleteProfilePage() {
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    background: "#ffffff",
-    fontFamily: "Arial, sans-serif",
-  },
-  left: {
-    minHeight: "100vh",
-    background: "#00aa13",
-    color: "white",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "22px",
-    padding: "48px 70px",
-    textAlign: "center",
-  },
-  logoBox: {
-    width: "170px",
-    height: "170px",
-    background: "#06140a",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "24px",
-    overflow: "hidden",
-    marginBottom: "18px",
-  },
-  logoImage: {
-    width: "110px",
-    height: "110px",
-    objectFit: "contain",
-  },
-  leftTitle: {
-    fontSize: "38px",
-    lineHeight: "1.15",
-    margin: 0,
-    fontWeight: 800,
-  },
-  leftText: {
-    maxWidth: "560px",
-    fontSize: "17px",
-    lineHeight: "1.7",
-    margin: 0,
-    opacity: 0.95,
-  },
+  minHeight: "100vh",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  background: "#ffffff",
+  fontFamily: "Arial, sans-serif",
+},
+ left: {
+  minHeight: "100vh",
+  background: "#00aa13",
+  color: "white",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "22px",
+  padding: "48px 70px",
+  textAlign: "center",
+},
+
+logoBox: {
+  width: "170px",
+  height: "170px",
+  background: "#06140a",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: "24px",
+  overflow: "hidden",
+  marginBottom: "18px",
+},
+
+logoImage: {
+  width: "110px",
+  height: "110px",
+  objectFit: "contain",
+},
+
+leftTitle: {
+  fontSize: "38px",
+  lineHeight: "1.15",
+  margin: 0,
+  fontWeight: 800,
+},
+
+leftText: {
+  maxWidth: "560px",
+  fontSize: "17px",
+  lineHeight: "1.7",
+  margin: 0,
+  opacity: 0.95,
+},
+
+featureRow: {
+  display: "flex",
+  gap: "20px",
+  marginTop: "12px",
+  justifyContent: "center",
+},
+
+featureCard: {
+  width: "220px",
+  padding: "22px 18px",
+  border: "1px solid rgba(255,255,255,0.28)",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.08)",
+  fontWeight: 700,
+  lineHeight: "1.5",
+},
+
+featureIcon: {
+  fontSize: "28px",
+  marginBottom: "10px",
+},
   right: {
     minHeight: "100vh",
     background: "#ffffff",
@@ -238,6 +360,15 @@ const styles = {
     lineHeight: "1.6",
     margin: "0 0 26px",
   },
+  errorBox: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    padding: "12px 14px",
+    fontSize: "14px",
+    marginBottom: "18px",
+  },
   form: {
     display: "flex",
     flexDirection: "column",
@@ -261,6 +392,7 @@ const styles = {
     background: "#f8fafc",
     fontSize: "15px",
     outline: "none",
+    boxSizing: "border-box",
   },
   vehicleGrid: {
     display: "grid",
