@@ -1,18 +1,112 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../../services/api";
 
 function DriverLayout({ activeMenu, title, subtitle, children }) {
   const navigate = useNavigate();
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => {
+  return localStorage.getItem("driver_online_status") !== "offline";
+});
+
+  const [sidebarProfile, setSidebarProfile] = useState({
+    full_name: "Driver",
+    initials: "DR",
+    role: "Gojek Driver",
+    status: "Terverifikasi",
+    note: "Siap menerima order",
+  });
 
   const menus = [
-  { name: "Home", icon: "⌂", path: "/driver" },
-  { name: "Orders", icon: "▤", path: "/driver/orders" },
-  { name: "History", icon: "◷", path: "/driver/history" },
-  { name: "Earnings", icon: "▣", path: "/driver/earnings" },
-  { name: "Account", icon: "◉", path: "/driver/account" },
-];
+    { name: "Home", icon: "⌂", path: "/driver" },
+    { name: "Orders", icon: "▤", path: "/driver/orders" },
+    { name: "History", icon: "◷", path: "/driver/history" },
+    { name: "Earnings", icon: "▣", path: "/driver/earnings" },
+    { name: "Account", icon: "◉", path: "/driver/account" },
+  ];
+
+  useEffect(() => {
+    fetchSidebarProfile();
+
+    function handleProfileUpdated(event) {
+      const profile = event.detail;
+
+      if (profile) {
+        setSidebarProfile((prev) => ({
+          ...prev,
+          full_name: profile.full_name || prev.full_name,
+          initials: profile.initials || makeInitials(profile.full_name || prev.full_name),
+          status:
+            profile.registration_status === "verified"
+              ? "Terverifikasi"
+              : profile.registration_status || prev.status,
+        }));
+      } else {
+        fetchSidebarProfile();
+      }
+    }
+
+    window.addEventListener("driver-profile-updated", handleProfileUpdated);
+    function toggleOnlineStatus() {
+  const nextStatus = !isOnline;
+
+  setIsOnline(nextStatus);
+
+  localStorage.setItem(
+    "driver_online_status",
+    nextStatus ? "online" : "offline"
+  );
+
+  window.dispatchEvent(
+    new CustomEvent("driver-online-status-changed", {
+      detail: {
+        isOnline: nextStatus,
+      },
+    })
+  );
+}
+    return () => {
+      window.removeEventListener("driver-profile-updated", handleProfileUpdated);
+    };
+  }, []);
+
+  async function fetchSidebarProfile() {
+    try {
+      const response = await apiRequest("/driver/account");
+      const profile = response.data?.profile;
+
+      if (profile) {
+        setSidebarProfile({
+          full_name: profile.full_name || "Driver",
+          initials: profile.initials || makeInitials(profile.full_name || "Driver"),
+          role: "Gojek Driver",
+          status:
+            profile.registration_status === "verified"
+              ? "Terverifikasi"
+              : profile.registration_status || "Terverifikasi",
+          note: "Siap menerima order",
+        });
+      }
+    } catch (err) {
+      console.error("Gagal mengambil profil sidebar:", err.message);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await apiRequest("/driver/logout", {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Logout backend gagal:", err.message);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      navigate("/");
+    }
+  }
 
   return (
     <div
@@ -24,12 +118,12 @@ function DriverLayout({ activeMenu, title, subtitle, children }) {
       <aside style={styles.sidebar}>
         <div>
           <div style={styles.profileArea}>
-            <div style={styles.avatar}>SD</div>
+            <div style={styles.avatar}>{sidebarProfile.initials}</div>
 
             {sidebarOpen && (
               <div>
-                <h3 style={styles.profileName}>Sudirman</h3>
-                <p style={styles.profileRole}>Gojek Driver</p>
+                <h3 style={styles.profileName}>{sidebarProfile.full_name}</h3>
+                <p style={styles.profileRole}>{sidebarProfile.role}</p>
               </div>
             )}
           </div>
@@ -64,12 +158,12 @@ function DriverLayout({ activeMenu, title, subtitle, children }) {
           {sidebarOpen && (
             <div style={styles.sidebarCard}>
               <p style={styles.sidebarCardLabel}>Status Akun</p>
-              <h3 style={styles.sidebarCardTitle}>Terverifikasi</h3>
-              <p style={styles.sidebarCardText}>Siap menerima order</p>
+              <h3 style={styles.sidebarCardTitle}>{sidebarProfile.status}</h3>
+              <p style={styles.sidebarCardText}>{sidebarProfile.note}</p>
             </div>
           )}
 
-          <button style={styles.logoutButton} onClick={() => navigate("/")}>
+          <button style={styles.logoutButton} onClick={handleLogout}>
             {sidebarOpen ? "Keluar" : "×"}
           </button>
         </div>
@@ -94,7 +188,6 @@ function DriverLayout({ activeMenu, title, subtitle, children }) {
               <span style={styles.onlineDot}></span>
             </button>
 
-            <button style={styles.iconButton}>🔔</button>
           </div>
         </header>
 
@@ -102,6 +195,16 @@ function DriverLayout({ activeMenu, title, subtitle, children }) {
       </main>
     </div>
   );
+}
+
+function makeInitials(name) {
+  const cleanName = String(name || "Driver").trim();
+  const words = cleanName.split(" ").filter(Boolean);
+
+  if (words.length === 0) return "DR";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
 }
 
 export function Card({ children, style }) {
@@ -323,15 +426,6 @@ const styles = {
     background: "white",
   },
 
-  iconButton: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    border: "none",
-    background: "#f6f7f4",
-    cursor: "pointer",
-  },
-
   card: {
     background: "#ffffff",
     border: "1px solid #dfe5de",
@@ -388,6 +482,5 @@ const styles = {
     color: "#b91c1c",
   },
 };
-
 
 export default DriverLayout;

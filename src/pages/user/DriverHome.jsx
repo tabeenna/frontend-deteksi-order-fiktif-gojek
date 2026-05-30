@@ -32,7 +32,7 @@ function DriverHome() {
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const response = await apiRequest("/driver/home");
+        const response = await apiRequest("/driver/earnings");
         setDashboard(response.data);
       } catch (err) {
         setError(err.message || "Gagal mengambil data dashboard driver.");
@@ -87,7 +87,6 @@ function DriverHome() {
   const bonus = dashboard?.bonus || {};
   const activities = dashboard?.activities || [];
   const fraudDetection = dashboard?.fraud_detection || {};
-  const recommendations = dashboard?.recommendations || [];
   const busyAreas = dashboard?.busy_areas || {};
 
   const selectedAreaData =
@@ -339,86 +338,6 @@ function DriverHome() {
         </Card>
       </section>
 
-      <section style={styles.contentGrid}>
-        <Card>
-          <div style={styles.sectionHead}>
-            <div>
-              <h2 style={styles.sectionTitle}>Rekomendasi Sistem</h2>
-              <p style={styles.sectionText}>
-                Saran otomatis agar driver bisa mengambil keputusan lebih cepat.
-              </p>
-            </div>
-          </div>
-
-          {recommendations.map((item) => (
-            <button
-              key={item.number || item.title}
-              style={styles.recommendationCard}
-              onClick={() =>
-                openModal("recommendation", {
-                  title: item.title,
-                  desc: item.desc,
-                })
-              }
-            >
-              <div style={styles.recommendationIcon}>{item.number}</div>
-              <div>
-                <h3 style={styles.recommendationTitle}>{item.title}</h3>
-                <p style={styles.recommendationText}>{item.short_desc}</p>
-              </div>
-            </button>
-          ))}
-        </Card>
-
-        <Card>
-          <div style={styles.sectionHead}>
-            <div>
-              <h2 style={styles.sectionTitle}>Shortcut Driver</h2>
-              <p style={styles.sectionText}>
-                Akses cepat ke fitur utama dashboard.
-              </p>
-            </div>
-          </div>
-
-          <div style={styles.shortcutGrid}>
-            <button
-              style={styles.shortcutButton}
-              onClick={() => navigate("/driver/orders")}
-            >
-              <span>▤</span>
-              <strong>Orders</strong>
-              <p>Cek order dan risiko</p>
-            </button>
-
-            <button
-              style={styles.shortcutButton}
-              onClick={() => navigate("/driver/earnings")}
-            >
-              <span>▣</span>
-              <strong>Earnings</strong>
-              <p>Lihat pendapatan</p>
-            </button>
-
-            <button
-              style={styles.shortcutButton}
-              onClick={() => navigate("/driver/account")}
-            >
-              <span>◉</span>
-              <strong>Account</strong>
-              <p>Kelola akun</p>
-            </button>
-
-            <button
-              style={styles.shortcutButton}
-              onClick={() => openModal("support")}
-            >
-              <span>?</span>
-              <strong>Bantuan</strong>
-              <p>Hubungi support</p>
-            </button>
-          </div>
-        </Card>
-      </section>
 
       <Card>
         <div style={styles.sectionHead}>
@@ -649,13 +568,6 @@ function DriverHome() {
                 >
                   Buka Analisis Order
                 </button>
-              </>
-            )}
-
-            {modal.type === "recommendation" && (
-              <>
-                <h2 style={styles.modalTitle}>{modal.data.title}</h2>
-                <p style={styles.modalText}>{modal.data.desc}</p>
               </>
             )}
 
@@ -991,58 +903,6 @@ const styles = {
     marginTop: "10px",
   },
 
-  recommendationCard: {
-    width: "100%",
-    border: "1px solid #edf0eb",
-    background: "#f7f8f5",
-    borderRadius: "14px",
-    padding: "14px",
-    display: "grid",
-    gridTemplateColumns: "40px 1fr",
-    gap: "12px",
-    cursor: "pointer",
-    textAlign: "left",
-    marginBottom: "12px",
-  },
-
-  recommendationIcon: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    background: "#e6f3e9",
-    color: "#087f23",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 900,
-  },
-
-  recommendationTitle: {
-    margin: 0,
-    fontSize: "14px",
-  },
-
-  recommendationText: {
-    margin: "5px 0 0",
-    color: "#68716c",
-    fontSize: "13px",
-    lineHeight: "1.5",
-  },
-
-  shortcutGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-  },
-
-  shortcutButton: {
-    border: "1px solid #edf0eb",
-    background: "#f7f8f5",
-    borderRadius: "14px",
-    padding: "16px",
-    cursor: "pointer",
-    textAlign: "left",
-  },
 
   mapCard: {
   height: "320px",

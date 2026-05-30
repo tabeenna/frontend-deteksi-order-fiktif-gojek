@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../../services/api";
 import DriverLayout, {
   Card,
   StatCard,
@@ -8,55 +9,62 @@ import DriverLayout, {
 function DriverEarningsPage() {
   const [modal, setModal] = useState(null);
   const [activeFilter, setActiveFilter] = useState("Semua");
+  const [summary, setSummary] = useState({
+  available_balance_label: "Rp 0",
+  today_earnings_label: "Rp 0",
+  incentive_label: "Rp 0",
+  completed_orders_today: 0,
+});
 
-  const transactions = [
-    {
-      id: "TRX-001",
-      service: "GoRide",
-      route: "Sudirman ke Thamrin",
-      amount: "+ Rp 24.000",
-      time: "14:20",
-      status: "Selesai",
-      type: "Order",
-    },
-    {
-      id: "TRX-002",
-      service: "GoFood",
-      route: "Martabak Pecenongan",
-      amount: "+ Rp 18.500",
-      time: "13:45",
-      status: "Selesai",
-      type: "Order",
-    },
-    {
-      id: "TRX-003",
-      service: "GoSend",
-      route: "Kuningan City Mall",
-      amount: "+ Rp 32.000",
-      time: "12:10",
-      status: "Selesai",
-      type: "Order",
-    },
-    {
-      id: "TRX-004",
-      service: "Bonus",
-      route: "Target harian tercapai",
-      amount: "+ Rp 50.000",
-      time: "11:00",
-      status: "Insentif",
-      type: "Bonus",
-    },
-  ];
+useEffect(() => {
+  async function fetchEarnings() {
+    try {
+      const response = await apiRequest("/driver/earnings");
 
-  const weeklyData = [
-    { day: "Sen", value: 45 },
-    { day: "Sel", value: 60 },
-    { day: "Rab", value: 52 },
-    { day: "Kam", value: 75 },
-    { day: "Jum", value: 68 },
-    { day: "Sab", value: 90 },
-    { day: "Min", value: 82 },
-  ];
+      setSummary(
+        response.data.summary || {
+          available_balance_label: "Rp 0",
+          today_earnings_label: "Rp 0",
+          incentive_label: "Rp 0",
+          completed_orders_today: 0,
+        }
+      );
+
+      setTransactions(response.data.transactions || []);
+      setWeeklyData(
+        response.data.weeklyData || [
+          { day: "Sen", value: 0, amount_label: "Rp 0" },
+          { day: "Sel", value: 0, amount_label: "Rp 0" },
+          { day: "Rab", value: 0, amount_label: "Rp 0" },
+          { day: "Kam", value: 0, amount_label: "Rp 0" },
+          { day: "Jum", value: 0, amount_label: "Rp 0" },
+          { day: "Sab", value: 0, amount_label: "Rp 0" },
+          { day: "Min", value: 0, amount_label: "Rp 0" },
+        ]
+      );
+    } catch (err) {
+      setError(err.message || "Gagal mengambil data earnings.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchEarnings();
+}, []);
+
+const [transactions, setTransactions] = useState([]);
+const [weeklyData, setWeeklyData] = useState([
+  { day: "Sen", value: 0, amount_label: "Rp 0" },
+  { day: "Sel", value: 0, amount_label: "Rp 0" },
+  { day: "Rab", value: 0, amount_label: "Rp 0" },
+  { day: "Kam", value: 0, amount_label: "Rp 0" },
+  { day: "Jum", value: 0, amount_label: "Rp 0" },
+  { day: "Sab", value: 0, amount_label: "Rp 0" },
+  { day: "Min", value: 0, amount_label: "Rp 0" },
+]);
+
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
 
   const filteredTransactions =
     activeFilter === "Semua"
@@ -83,7 +91,9 @@ function DriverEarningsPage() {
           onClick={() => openModal("balance")}
         >
           <p style={styles.balanceLabel}>Saldo Tersedia</p>
-          <h1 style={styles.balanceValue}>Rp 742.500</h1>
+          <h1 style={styles.balanceValue}>
+            {summary.available_balance_label}
+            </h1>
           <p style={styles.balanceText}>
             Bisa dicairkan ke rekening yang sudah terverifikasi.
           </p>
@@ -91,14 +101,22 @@ function DriverEarningsPage() {
           <span style={styles.withdrawPill}>Cairkan Saldo →</span>
         </button>
 
-        <StatCard label="Hari Ini" value="Rp 342.500" note="14 order selesai" />
+        <StatCard
+        label="Hari Ini"
+        value={summary.today_earnings_label}
+        note={`${summary.completed_orders_today} order selesai`}
+        />
         <StatCard
           label="Insentif"
-          value="Rp 50.000"
+          value={summary.incentive_label}
           note="Target bonus"
           color="#087f23"
         />
-        <StatCard label="Order Selesai" value="14" note="Hari ini" />
+        <StatCard
+        label="Order Selesai"
+        value={String(summary.completed_orders_today)}
+        note="Hari ini"
+        />
       </section>
 
       <section style={styles.contentGrid}>

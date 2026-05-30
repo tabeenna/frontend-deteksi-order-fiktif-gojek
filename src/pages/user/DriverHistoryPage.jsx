@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import DriverLayout, {
   Card,
@@ -11,148 +12,47 @@ function DriverHistoryPage() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [modal, setModal] = useState(null);
+  const [histories, setHistories] = useState([]);
+const [summary, setSummary] = useState({
+  total: 0,
+  completed: 0,
+  driver_cancelled: 0,
+  auto_cancelled: 0,
+});
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
 
-  const histories = [
-    {
-      id: "HIS-001",
-      orderId: "ORD-001",
-      service: "GoRide",
-      customer: "Raka Pratama",
-      route: "Mall Olympic Garden → Universitas Brawijaya",
-      pickup: "Mall Olympic Garden",
-      destination: "Universitas Brawijaya",
-      date: "Hari ini",
-      time: "14:20",
-      duration: "18 menit",
-      distance: "4.2 km",
-      fare: "Rp 24.000",
-      payment: "GoPay",
-      riskLevel: "Rendah",
-      riskScore: 22,
-      status: "Selesai",
-      verification: "Tidak perlu verifikasi tambahan",
-      note: "Order berjalan normal dan selesai tanpa kendala.",
-      timeline: [
-        "Order diterima driver",
-        "Driver menuju lokasi jemput",
-        "Customer berhasil dijemput",
-        "Perjalanan menuju tujuan",
-        "Order selesai dan pendapatan masuk",
-      ],
-    },
-    {
-      id: "HIS-002",
-      orderId: "ORD-002",
-      service: "GoFood",
-      customer: "User Baru",
-      route: "Restoran Cepat Saji → Alamat Customer",
-      pickup: "Restoran Cepat Saji",
-      destination: "Alamat Customer",
-      date: "Hari ini",
-      time: "13:45",
-      duration: "24 menit",
-      distance: "2.1 km",
-      fare: "Rp 18.500",
-      payment: "Tunai",
-      riskLevel: "Sedang",
-      riskScore: 58,
-      status: "Selesai",
-      verification: "OTP customer + scan QR saat serah terima makanan",
-      note:
-        "Order risiko sedang diselesaikan setelah customer verifikasi OTP dan QR berhasil discan saat makanan diserahkan.",
-      timeline: [
-        "OTP dikirim ke customer",
-        "Customer berhasil verifikasi OTP",
-        "Driver mengambil makanan ke restoran",
-        "Driver menuju lokasi customer",
-        "QR customer discan saat serah terima",
-        "Order selesai dan pendapatan masuk",
-      ],
-    },
-    {
-      id: "HIS-003",
-      orderId: "ORD-003",
-      service: "GoRide",
-      customer: "Akun Tanpa Nama Jelas",
-      route: "Lokasi sepi → Titik tidak sesuai peta",
-      pickup: "Lokasi sepi",
-      destination: "Titik tidak sesuai peta",
-      date: "Hari ini",
-      time: "12:30",
-      duration: "-",
-      distance: "8.9 km",
-      fare: "Rp 0",
-      payment: "Tunai",
-      riskLevel: "Tinggi",
-      riskScore: 84,
-      status: "Auto Cancel",
-      verification: "Dibatalkan otomatis oleh sistem",
-      note:
-        "Order tidak dilanjutkan karena skor risiko tinggi dan terindikasi tidak aman untuk driver.",
-      timeline: [
-        "Order masuk ke sistem",
-        "Sistem menghitung skor risiko tinggi",
-        "Order ditandai mencurigakan",
-        "Order dibatalkan otomatis",
-        "Driver tidak dapat menerima order",
-      ],
-    },
-    {
-      id: "HIS-004",
-      orderId: "ORD-004",
-      service: "GoFood",
-      customer: "Ayu Lestari",
-      route: "Dinoyo → Lowokwaru",
-      pickup: "Dinoyo",
-      destination: "Lowokwaru",
-      date: "Kemarin",
-      time: "19:10",
-      duration: "21 menit",
-      distance: "3.4 km",
-      fare: "Rp 27.000",
-      payment: "GoPay",
-      riskLevel: "Rendah",
-      riskScore: 18,
-      status: "Selesai",
-      verification: "Tidak perlu verifikasi tambahan",
-      note: "Order selesai dengan normal dan customer memberi rating baik.",
-      timeline: [
-        "Order diterima",
-        "Driver mengambil pesanan",
-        "Driver menuju customer",
-        "Pesanan diterima customer",
-        "Order selesai",
-      ],
-    },
-    {
-      id: "HIS-005",
-      orderId: "ORD-005",
-      service: "GoRide",
-      customer: "Customer Baru",
-      route: "Klojen → Sukun",
-      pickup: "Klojen",
-      destination: "Sukun",
-      date: "Kemarin",
-      time: "16:05",
-      duration: "-",
-      distance: "5.8 km",
-      fare: "Rp 0",
-      payment: "Tunai",
-      riskLevel: "Sedang",
-      riskScore: 61,
-      status: "Dibatalkan Driver",
-      verification: "OTP belum diselesaikan customer",
-      note:
-        "Driver membatalkan order karena customer tidak menyelesaikan verifikasi OTP dalam waktu yang ditentukan.",
-      timeline: [
-        "Order masuk dengan risiko sedang",
-        "OTP dikirim ke customer",
-        "Customer tidak menyelesaikan verifikasi",
-        "Driver membatalkan order",
-        "Order masuk ke riwayat pembatalan",
-      ],
-    },
-  ];
+useEffect(() => {
+  async function fetchHistories() {
+    try {
+      const response = await apiRequest("/driver/history");
+
+      const apiHistories = response.data.histories || [];
+
+      setHistories(apiHistories);
+      setSummary(
+        response.data.summary || {
+          total: 0,
+          completed: 0,
+          driver_cancelled: 0,
+          auto_cancelled: 0,
+        }
+      );
+
+      if (apiHistories.length > 0) {
+        setSelectedHistory(apiHistories[0]);
+      } else {
+        setSelectedHistory(null);
+      }
+    } catch (err) {
+      setError(err.message || "Gagal mengambil data riwayat order.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchHistories();
+}, []);
 
   const filteredHistories =
     activeFilter === "Semua"
@@ -194,6 +94,138 @@ function DriverHistoryPage() {
     setModal(null);
   }
 
+  function DriverHistoryPage() {
+  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState("Semua");
+  const [selectedHistory, setSelectedHistory] = useState(null);
+  const [modal, setModal] = useState(null);
+
+  const [histories, setHistories] = useState([]);
+  const [summary, setSummary] = useState({
+    total: 0,
+    completed: 0,
+    driver_cancelled: 0,
+    auto_cancelled: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchHistories() {
+      try {
+        const response = await apiRequest("/driver/history");
+
+        const apiHistories = response.data.histories || [];
+
+        setHistories(apiHistories);
+        setSummary(
+          response.data.summary || {
+            total: 0,
+            completed: 0,
+            driver_cancelled: 0,
+            auto_cancelled: 0,
+          }
+        );
+
+        if (apiHistories.length > 0) {
+          setSelectedHistory(apiHistories[0]);
+        } else {
+          setSelectedHistory(null);
+        }
+      } catch (err) {
+        setError(err.message || "Gagal mengambil data riwayat order.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchHistories();
+  }, []);
+
+  const filteredHistories =
+    activeFilter === "Semua"
+      ? histories
+      : histories.filter((item) => item.status === activeFilter);
+
+  function getBadgeType(riskLevel) {
+    if (riskLevel === "Rendah") return "green";
+    if (riskLevel === "Sedang") return "yellow";
+    return "red";
+  }
+
+  function getStatusStyle(status) {
+    if (status === "Selesai") {
+      return {
+        background: "#e6f3e9",
+        color: "#087f23",
+      };
+    }
+
+    if (status === "Auto Cancel") {
+      return {
+        background: "#fee2e2",
+        color: "#b91c1c",
+      };
+    }
+
+    return {
+      background: "#fff7e6",
+      color: "#a16207",
+    };
+  }
+
+  function openModal(type, data = null) {
+    setModal({ type, data });
+  }
+
+  function closeModal() {
+    setModal(null);
+  }
+
+  // TEMPEL LOADING DI SINI
+  if (loading) {
+    return (
+      <DriverLayout
+        activeMenu="History"
+        title="Order History"
+        subtitle="Memuat riwayat order driver..."
+      >
+        <Card>
+          <p>Sedang memuat riwayat order...</p>
+        </Card>
+      </DriverLayout>
+    );
+  }
+
+  // TEMPEL ERROR DI SINI
+  if (error) {
+    return (
+      <DriverLayout
+        activeMenu="History"
+        title="Order History"
+        subtitle="Terjadi kesalahan saat mengambil riwayat order."
+      >
+        <Card>
+          <p style={{ color: "#b91c1c", fontWeight: 800 }}>{error}</p>
+          <p style={{ color: "#68716c", fontSize: "13px" }}>
+            Pastikan backend Laravel menyala dan endpoint /driver/history sudah tersedia.
+          </p>
+        </Card>
+      </DriverLayout>
+    );
+  }
+
+  // INI RETURN UTAMA YANG DIMAKSUD
+  return (
+    <DriverLayout
+      activeMenu="History"
+      title="Order History"
+      subtitle="Riwayat order yang sudah selesai, dibatalkan, atau dibatalkan otomatis oleh sistem."
+    >
+      {/* isi tampilan history kamu tetap di bawah sini */}
+    </DriverLayout>
+  );
+}
   return (
     <DriverLayout
       activeMenu="History"
@@ -208,7 +240,11 @@ function DriverHistoryPage() {
           }}
           onClick={() => setActiveFilter("Semua")}
         >
-          <StatCard label="Total Riwayat" value="5" note="Semua order" />
+          <StatCard
+  label="Total Riwayat"
+  value={String(summary.total)}
+  note="Semua order"
+/>
         </button>
 
         <button
@@ -220,7 +256,7 @@ function DriverHistoryPage() {
         >
           <StatCard
             label="Selesai"
-            value="3"
+            value={String(summary.completed)}
             note="Pendapatan masuk"
             color="#087f23"
           />
@@ -235,7 +271,7 @@ function DriverHistoryPage() {
         >
           <StatCard
             label="Dibatalkan"
-            value="1"
+            value={String(summary.driver_cancelled)}
             note="Oleh driver"
             color="#d97706"
           />
@@ -250,7 +286,7 @@ function DriverHistoryPage() {
         >
           <StatCard
             label="Auto Cancel"
-            value="1"
+            value={String(summary.auto_cancelled)}
             note="Risiko tinggi"
             color="#b91c1c"
           />
@@ -277,44 +313,54 @@ function DriverHistoryPage() {
           </div>
 
           <div style={styles.historyList}>
-            {filteredHistories.map((item) => (
-              <button
-                key={item.id}
-                style={{
-                  ...styles.historyCard,
-                  ...(selectedHistory?.id === item.id
-                    ? styles.historyCardActive
-                    : {}),
-                }}
-                onClick={() => setSelectedHistory(item)}
-              >
-                <div style={styles.historyTop}>
-                  <div>
-                    <p style={styles.historyId}>{item.orderId}</p>
-                    <h3 style={styles.historyTitle}>
-                      {item.service} • {item.customer}
-                    </h3>
-                    <p style={styles.historyRoute}>{item.route}</p>
-                  </div>
-
-                  <span
-                    style={{
-                      ...styles.statusBadge,
-                      ...getStatusStyle(item.status),
-                    }}
-                  >
-                    {item.status}
-                  </span>
-                </div>
-
-                <div style={styles.historyMeta}>
-                  <span>{item.date}</span>
-                  <span>{item.time}</span>
-                  <span>{item.fare}</span>
-                </div>
-              </button>
-            ))}
+  {filteredHistories.length === 0 ? (
+    <div style={styles.emptyListBox}>
+      <h3>Belum ada riwayat order</h3>
+      <p>
+        Riwayat akan muncul setelah order diselesaikan, dibatalkan driver,
+        atau dibatalkan otomatis oleh sistem.
+      </p>
+    </div>
+  ) : (
+    filteredHistories.map((item) => (
+      <button
+        key={item.id}
+        style={{
+          ...styles.historyCard,
+          ...(selectedHistory?.id === item.id
+            ? styles.historyCardActive
+            : {}),
+        }}
+        onClick={() => setSelectedHistory(item)}
+      >
+        <div style={styles.historyTop}>
+          <div>
+            <p style={styles.historyId}>{item.orderId}</p>
+            <h3 style={styles.historyTitle}>
+              {item.service} • {item.customer}
+            </h3>
+            <p style={styles.historyRoute}>{item.route}</p>
           </div>
+
+          <span
+            style={{
+              ...styles.statusBadge,
+              ...getStatusStyle(item.status),
+            }}
+          >
+            {item.status}
+          </span>
+        </div>
+
+        <div style={styles.historyMeta}>
+          <span>{item.date}</span>
+          <span>{item.time}</span>
+          <span>{item.fare}</span>
+        </div>
+      </button>
+    ))
+  )}
+</div>
         </Card>
 
         <Card style={styles.detailCard}>
@@ -530,18 +576,28 @@ const styles = {
   },
 
   historyList: {
-    display: "grid",
-    gap: "12px",
-  },
+  display: "grid",
+  gap: "12px",
+},
 
-  historyCard: {
-    border: "1px solid #dfe5de",
-    background: "#f7f8f5",
-    borderRadius: "16px",
-    padding: "16px",
-    cursor: "pointer",
-    textAlign: "left",
-  },
+emptyListBox: {
+  background: "#f7f8f5",
+  border: "1px solid #dfe5de",
+  borderRadius: "16px",
+  padding: "18px",
+  color: "#68716c",
+  fontSize: "13px",
+  lineHeight: "1.6",
+},
+
+historyCard: {
+  border: "1px solid #dfe5de",
+  background: "#f7f8f5",
+  borderRadius: "16px",
+  padding: "16px",
+  cursor: "pointer",
+  textAlign: "left",
+},
 
   historyCardActive: {
     border: "2px solid #087f23",

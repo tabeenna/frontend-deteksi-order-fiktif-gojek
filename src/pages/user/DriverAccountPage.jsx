@@ -1,47 +1,281 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../../services/api";
 import DriverLayout, {
   Card,
   StatCard,
   Badge,
 } from "../../components/driver/DriverLayout";
 
+const defaultAccount = {
+  profile: {
+    driver_id: "DRV-2026-000",
+    full_name: "Driver",
+    initials: "DR",
+    email: "-",
+    phone: "-",
+    operational_city: "Malang",
+    status: "Aktif",
+    registration_status: "verified",
+  },
+  stats: {
+    rating: "5.0",
+    completed_orders: 0,
+    cancellation_rate: "0%",
+    account_status: "Aktif",
+  },
+  vehicle: {
+    vehicle_type: "GoRide",
+    vehicle_brand: "-",
+    vehicle_model: "-",
+    plate_number: "-",
+    vehicle_year: "-",
+    vehicle_color: "-",
+    status: "Aktif",
+  },
+  bank: {
+    bank_name: "-",
+    bank_account_name: "-",
+    bank_account_number: "-",
+    bank_account_number_masked: "••••",
+    status: "Terverifikasi",
+  },
+  documents: [],
+};
+
 function DriverAccountPage() {
   const [modal, setModal] = useState(null);
+  const [account, setAccount] = useState(defaultAccount);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const documents = [
-    {
-      name: "KTP",
-      status: "Terverifikasi",
-      desc: "Identitas driver sudah valid.",
-      icon: "ID",
-    },
-    {
-      name: "Foto Wajah",
-      status: "Terverifikasi",
-      desc: "Foto wajah sesuai dengan data akun.",
-      icon: "FW",
-    },
-    {
-      name: "Data Kendaraan",
-      status: "Aktif",
-      desc: "Kendaraan siap digunakan untuk menerima order.",
-      icon: "DK",
-    },
-    {
-      name: "Rekening Bank",
-      status: "Terverifikasi",
-      desc: "Rekening aktif untuk pencairan saldo.",
-      icon: "RB",
-    },
-  ];
+  const [profileForm, setProfileForm] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    operational_city: "",
+  });
+
+  const [vehicleForm, setVehicleForm] = useState({
+    vehicle_type: "",
+    vehicle_brand: "",
+    vehicle_model: "",
+    plate_number: "",
+    vehicle_year: "",
+    vehicle_color: "",
+  });
+
+  const [bankForm, setBankForm] = useState({
+    bank_name: "",
+    bank_account_name: "",
+    bank_account_number: "",
+  });
+
+  useEffect(() => {
+    fetchAccount();
+  }, []);
+
+  async function fetchAccount() {
+    try {
+      const response = await apiRequest("/driver/account");
+      const data = response.data || defaultAccount;
+
+      setAccount(data);
+      syncForms(data);
+    } catch (err) {
+      setError(err.message || "Gagal mengambil data akun driver.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function syncForms(data) {
+    setProfileForm({
+      full_name: data.profile?.full_name || "",
+      email: data.profile?.email || "",
+      phone: data.profile?.phone || "",
+      operational_city: data.profile?.operational_city || "",
+    });
+
+    setVehicleForm({
+      vehicle_type: data.vehicle?.vehicle_type || "",
+      vehicle_brand: data.vehicle?.vehicle_brand || "",
+      vehicle_model: data.vehicle?.vehicle_model || "",
+      plate_number: data.vehicle?.plate_number || "",
+      vehicle_year: data.vehicle?.vehicle_year || "",
+      vehicle_color: data.vehicle?.vehicle_color || "",
+    });
+
+    setBankForm({
+      bank_name: data.bank?.bank_name || "",
+      bank_account_name: data.bank?.bank_account_name || "",
+      bank_account_number: data.bank?.bank_account_number || "",
+    });
+  }
 
   function openModal(type, data = null) {
+    if (type === "profile") {
+      setProfileForm({
+        full_name: account.profile.full_name || "",
+        email: account.profile.email || "",
+        phone: account.profile.phone || "",
+        operational_city: account.profile.operational_city || "",
+      });
+    }
+
+    if (type === "vehicle") {
+      setVehicleForm({
+        vehicle_type: account.vehicle.vehicle_type || "",
+        vehicle_brand: account.vehicle.vehicle_brand || "",
+        vehicle_model: account.vehicle.vehicle_model || "",
+        plate_number: account.vehicle.plate_number || "",
+        vehicle_year: account.vehicle.vehicle_year || "",
+        vehicle_color: account.vehicle.vehicle_color || "",
+      });
+    }
+
+    if (type === "bank") {
+      setBankForm({
+        bank_name: account.bank.bank_name || "",
+        bank_account_name: account.bank.bank_account_name || "",
+        bank_account_number: account.bank.bank_account_number || "",
+      });
+    }
+
     setModal({ type, data });
   }
 
   function closeModal() {
     setModal(null);
   }
+
+  async function saveProfile() {
+    try {
+      const response = await apiRequest("/driver/account/profile", {
+        method: "PUT",
+        body: JSON.stringify(profileForm),
+      });
+
+      setAccount(response.data || defaultAccount);
+      syncForms(response.data || defaultAccount);
+      window.dispatchEvent(
+        new CustomEvent("driver-profile-updated", {
+          detail: response.data?.profile,
+        })
+      );
+      setModal({ type: "success", data: "Profil driver berhasil diperbarui." });
+    } catch (err) {
+      alert(err.message || "Gagal menyimpan profil.");
+    }
+  }
+
+  async function saveVehicle() {
+    try {
+      const response = await apiRequest("/driver/account/vehicle", {
+        method: "PUT",
+        body: JSON.stringify(vehicleForm),
+      });
+
+      setAccount(response.data || defaultAccount);
+      syncForms(response.data || defaultAccount);
+      setModal({ type: "success", data: "Data kendaraan berhasil diperbarui." });
+    } catch (err) {
+      alert(err.message || "Gagal menyimpan data kendaraan.");
+    }
+  }
+
+  async function saveBank() {
+    try {
+      const response = await apiRequest("/driver/account/bank", {
+        method: "PUT",
+        body: JSON.stringify(bankForm),
+      });
+
+      setAccount(response.data || defaultAccount);
+      syncForms(response.data || defaultAccount);
+      setModal({ type: "success", data: "Data rekening berhasil diperbarui." });
+    } catch (err) {
+      alert(err.message || "Gagal menyimpan data rekening.");
+    }
+  }
+
+  async function logout() {
+    try {
+      await apiRequest("/driver/logout", {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Logout backend gagal:", err.message);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    }
+  }
+
+  if (loading) {
+    return (
+      <DriverLayout
+        activeMenu="Account"
+        title="Driver Account"
+        subtitle="Memuat data akun driver..."
+      >
+        <Card>
+          <p>Sedang memuat data akun...</p>
+        </Card>
+      </DriverLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DriverLayout
+        activeMenu="Account"
+        title="Driver Account"
+        subtitle="Terjadi kesalahan saat mengambil data akun."
+      >
+        <Card>
+          <p style={{ color: "#b91c1c", fontWeight: 800 }}>{error}</p>
+          <p style={{ color: "#68716c", fontSize: "13px" }}>
+            Pastikan backend Laravel menyala dan kamu sudah login sebagai driver.
+          </p>
+        </Card>
+      </DriverLayout>
+    );
+  }
+
+  const profile = account.profile || defaultAccount.profile;
+  const stats = account.stats || defaultAccount.stats;
+  const vehicle = account.vehicle || defaultAccount.vehicle;
+  const bank = account.bank || defaultAccount.bank;
+  const documents = account.documents?.length
+    ? account.documents
+    : [
+        {
+          name: "KTP",
+          status: "Belum Upload",
+          desc: "Dokumen KTP belum tersedia.",
+          icon: "ID",
+        },
+        {
+          name: "Foto Wajah",
+          status: "Belum Upload",
+          desc: "Foto wajah belum tersedia.",
+          icon: "FW",
+        },
+        {
+          name: "Data Kendaraan",
+          status: "Belum Lengkap",
+          desc: "Data kendaraan belum lengkap.",
+          icon: "DK",
+        },
+        {
+          name: "Rekening Bank",
+          status: "Belum Lengkap",
+          desc: "Data rekening belum lengkap.",
+          icon: "RB",
+        },
+      ];
 
   return (
     <DriverLayout
@@ -51,29 +285,51 @@ function DriverAccountPage() {
     >
       <section style={styles.profileHero}>
         <div style={styles.profileLeft}>
-          <div style={styles.bigAvatar}>SD</div>
+          <div style={styles.bigAvatar}>{profile.initials || "DR"}</div>
 
           <div>
-            <h2 style={styles.driverName}>Sudirman</h2>
-            <p style={styles.driverMeta}>Driver ID: DRV-2026-001</p>
+            <h2 style={styles.driverName}>{profile.full_name}</h2>
+            <p style={styles.driverMeta}>Driver ID: {profile.driver_id}</p>
 
             <div style={styles.badgeRow}>
-              <Badge>Terverifikasi</Badge>
-              <Badge>Aktif</Badge>
+              <Badge>{profile.registration_status === "verified" ? "Terverifikasi" : "Terdaftar"}</Badge>
+              <Badge>{profile.status || "Aktif"}</Badge>
             </div>
           </div>
         </div>
 
-        <button style={styles.primarySmallButton} onClick={() => openModal("profile")}>
+        <button
+          style={styles.primarySmallButton}
+          onClick={() => openModal("profile")}
+        >
           Edit Profil
         </button>
       </section>
 
       <section style={styles.statGrid}>
-        <StatCard label="Rating" value="5.0" note="Sangat baik" color="#087f23" />
-        <StatCard label="Order Selesai" value="142" note="Total simulasi" />
-        <StatCard label="Pembatalan" value="0%" note="Aman" color="#087f23" />
-        <StatCard label="Status Akun" value="Aktif" note="Siap menerima order" color="#087f23" />
+        <StatCard
+          label="Rating"
+          value={String(stats.rating || "5.0")}
+          note="Sangat baik"
+          color="#087f23"
+        />
+        <StatCard
+          label="Order Selesai"
+          value={String(stats.completed_orders || 0)}
+          note="Total order"
+        />
+        <StatCard
+          label="Pembatalan"
+          value={stats.cancellation_rate || "0%"}
+          note="Aman"
+          color="#087f23"
+        />
+        <StatCard
+          label="Status Akun"
+          value={stats.account_status || "Aktif"}
+          note="Siap menerima order"
+          color="#087f23"
+        />
       </section>
 
       <section style={styles.contentGrid}>
@@ -86,16 +342,22 @@ function DriverAccountPage() {
               </p>
             </div>
 
-            <button style={styles.softButton} onClick={() => openModal("profile")}>
+            <button
+              style={styles.softButton}
+              onClick={() => openModal("profile")}
+            >
               Ubah
             </button>
           </div>
 
           <div style={styles.infoList}>
-            <InfoItem label="Nama Lengkap" value="Sudirman" />
-            <InfoItem label="Email" value="sudirman.driver@email.com" />
-            <InfoItem label="Nomor Telepon" value="+62 812-3456-7890" />
-            <InfoItem label="Kota Operasional" value="Malang" />
+            <InfoItem label="Nama Lengkap" value={profile.full_name} />
+            <InfoItem label="Email" value={profile.email} />
+            <InfoItem label="Nomor Telepon" value={profile.phone} />
+            <InfoItem
+              label="Kota Operasional"
+              value={profile.operational_city}
+            />
           </div>
         </Card>
 
@@ -108,18 +370,34 @@ function DriverAccountPage() {
               </p>
             </div>
 
-            <button style={styles.softButton} onClick={() => openModal("vehicle")}>
+            <button
+              style={styles.softButton}
+              onClick={() => openModal("vehicle")}
+            >
               Ubah
             </button>
           </div>
 
-          <button style={styles.vehicleBox} onClick={() => openModal("vehicle")}>
+          <button
+            style={styles.vehicleBox}
+            onClick={() => openModal("vehicle")}
+          >
             <div style={styles.vehicleIcon}>GR</div>
 
             <div>
-              <h3 style={styles.vehicleTitle}>GoRide</h3>
-              <p style={styles.vehicleText}>Honda Vario • N 1234 ABC</p>
-              <p style={styles.vehicleText}>Tahun kendaraan: 2022</p>
+              <h3 style={styles.vehicleTitle}>
+                {vehicle.vehicle_type || "GoRide"}
+              </h3>
+              <p style={styles.vehicleText}>
+                {vehicle.vehicle_brand || "-"} {vehicle.vehicle_model || "-"} •{" "}
+                {vehicle.plate_number || "-"}
+              </p>
+              <p style={styles.vehicleText}>
+                Tahun kendaraan: {vehicle.vehicle_year || "-"}
+              </p>
+              <p style={styles.vehicleText}>
+                Warna: {vehicle.vehicle_color || "-"}
+              </p>
             </div>
           </button>
         </Card>
@@ -135,21 +413,28 @@ function DriverAccountPage() {
               </p>
             </div>
 
-            <button style={styles.softButton} onClick={() => openModal("bank")}>
+            <button
+              style={styles.softButton}
+              onClick={() => openModal("bank")}
+            >
               Ubah
             </button>
           </div>
 
           <button style={styles.bankBox} onClick={() => openModal("bank")}>
-            <div style={styles.bankIcon}>BCA</div>
+            <div style={styles.bankIcon}>{bank.bank_name || "BANK"}</div>
 
             <div>
-              <h3 style={styles.bankTitle}>BCA</h3>
-              <p style={styles.bankText}>•••• •••• 7890</p>
-              <p style={styles.bankText}>a.n. BUDI SANTOSO</p>
+              <h3 style={styles.bankTitle}>{bank.bank_name || "-"}</h3>
+              <p style={styles.bankText}>
+                {bank.bank_account_number_masked || "••••"}
+              </p>
+              <p style={styles.bankText}>
+                a.n. {bank.bank_account_name || "-"}
+              </p>
             </div>
 
-            <Badge>Terverifikasi</Badge>
+            <Badge>{bank.status || "Terverifikasi"}</Badge>
           </button>
         </Card>
 
@@ -166,7 +451,7 @@ function DriverAccountPage() {
           <div style={styles.securityList}>
             <SecurityItem
               title="Password"
-              value="Terakhir diubah 7 hari lalu"
+              value="Dikelola oleh sistem login"
               onClick={() => openModal("security", "Password")}
             />
 
@@ -205,7 +490,17 @@ function DriverAccountPage() {
               <div style={styles.documentIcon}>{doc.icon}</div>
 
               <h3 style={styles.documentName}>{doc.name}</h3>
-              <p style={styles.documentStatus}>{doc.status}</p>
+              <p
+                style={{
+                  ...styles.documentStatus,
+                  color:
+                    doc.status === "Terverifikasi" || doc.status === "Aktif"
+                      ? "#087f23"
+                      : "#d97706",
+                }}
+              >
+                {doc.status}
+              </p>
               <p style={styles.documentDesc}>{doc.desc}</p>
             </button>
           ))}
@@ -236,17 +531,56 @@ function DriverAccountPage() {
               <>
                 <h2 style={styles.modalTitle}>Edit Profil Driver</h2>
                 <p style={styles.modalText}>
-                  Bagian ini merupakan simulasi perubahan data pribadi driver.
+                  Perubahan profil akan disimpan ke backend dan tampil kembali di halaman Account.
                 </p>
 
                 <div style={styles.formGrid}>
-                  <Input label="Nama Lengkap" value="Sudirman" />
-                  <Input label="Email" value="sudirman.driver@email.com" />
-                  <Input label="Nomor Telepon" value="+62 812-3456-7890" />
-                  <Input label="Kota Operasional" value="Malang" />
+                  <Input
+                    label="Nama Lengkap"
+                    value={profileForm.full_name}
+                    onChange={(value) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        full_name: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Email"
+                    value={profileForm.email}
+                    onChange={(value) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        email: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Nomor Telepon"
+                    value={profileForm.phone}
+                    onChange={(value) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        phone: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Kota Operasional"
+                    value={profileForm.operational_city}
+                    onChange={(value) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        operational_city: value,
+                      }))
+                    }
+                  />
                 </div>
 
-                <button style={styles.primaryButton} onClick={closeModal}>
+                <button style={styles.primaryButton} onClick={saveProfile}>
                   Simpan Perubahan
                 </button>
               </>
@@ -254,42 +588,140 @@ function DriverAccountPage() {
 
             {modal.type === "vehicle" && (
               <>
-                <h2 style={styles.modalTitle}>Detail Kendaraan</h2>
+                <h2 style={styles.modalTitle}>Edit Data Kendaraan</h2>
                 <p style={styles.modalText}>
-                  Informasi kendaraan yang terdaftar pada akun driver.
+                  Data kendaraan akan digunakan untuk identitas driver saat menerima order.
                 </p>
 
-                <div style={styles.modalInfoGrid}>
-                  <InfoBox label="Layanan" value="GoRide" />
-                  <InfoBox label="Merek" value="Honda" />
-                  <InfoBox label="Model" value="Vario" />
-                  <InfoBox label="Nomor Polisi" value="N 1234 ABC" />
-                  <InfoBox label="Tahun" value="2022" />
-                  <InfoBox label="Status" value="Aktif" />
+                <div style={styles.formGrid}>
+                  <Input
+                    label="Layanan"
+                    value={vehicleForm.vehicle_type}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        vehicle_type: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Merek"
+                    value={vehicleForm.vehicle_brand}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        vehicle_brand: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Model"
+                    value={vehicleForm.vehicle_model}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        vehicle_model: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Nomor Polisi"
+                    value={vehicleForm.plate_number}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        plate_number: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Tahun"
+                    value={vehicleForm.vehicle_year}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        vehicle_year: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Warna"
+                    value={vehicleForm.vehicle_color}
+                    onChange={(value) =>
+                      setVehicleForm((prev) => ({
+                        ...prev,
+                        vehicle_color: value,
+                      }))
+                    }
+                  />
                 </div>
 
-                <button style={styles.primaryButton} onClick={closeModal}>
-                  Oke
+                <button style={styles.primaryButton} onClick={saveVehicle}>
+                  Simpan Kendaraan
                 </button>
               </>
             )}
 
             {modal.type === "bank" && (
               <>
-                <h2 style={styles.modalTitle}>Detail Rekening Bank</h2>
+                <h2 style={styles.modalTitle}>Edit Rekening Bank</h2>
                 <p style={styles.modalText}>
                   Rekening ini digunakan untuk pencairan saldo driver.
                 </p>
 
-                <div style={styles.modalInfoGrid}>
-                  <InfoBox label="Bank" value="BCA" />
-                  <InfoBox label="Nomor Rekening" value="•••• •••• 7890" />
-                  <InfoBox label="Nama Pemilik" value="BUDI SANTOSO" />
-                  <InfoBox label="Status" value="Terverifikasi" />
+                <div style={styles.formGrid}>
+                  <Input
+                    label="Bank"
+                    value={bankForm.bank_name}
+                    onChange={(value) =>
+                      setBankForm((prev) => ({
+                        ...prev,
+                        bank_name: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Nomor Rekening"
+                    value={bankForm.bank_account_number}
+                    onChange={(value) =>
+                      setBankForm((prev) => ({
+                        ...prev,
+                        bank_account_number: value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    label="Nama Pemilik"
+                    value={bankForm.bank_account_name}
+                    onChange={(value) =>
+                      setBankForm((prev) => ({
+                        ...prev,
+                        bank_account_name: value,
+                      }))
+                    }
+                  />
                 </div>
 
+                <button style={styles.primaryButton} onClick={saveBank}>
+                  Simpan Rekening
+                </button>
+              </>
+            )}
+
+            {modal.type === "success" && (
+              <>
+                <h2 style={styles.modalTitle}>Berhasil</h2>
+                <p style={styles.modalText}>{modal.data}</p>
+
                 <button style={styles.primaryButton} onClick={closeModal}>
-                  Oke
+                  Mengerti
                 </button>
               </>
             )}
@@ -299,7 +731,7 @@ function DriverAccountPage() {
                 <h2 style={styles.modalTitle}>{modal.data}</h2>
                 <p style={styles.modalText}>
                   Pengaturan <b>{modal.data}</b> masih berupa simulasi prototype.
-                  Pada sistem asli, bagian ini terhubung dengan backend keamanan akun.
+                  Untuk demo, status keamanan ditampilkan aktif.
                 </p>
 
                 <button style={styles.primaryButton} onClick={closeModal}>
@@ -338,12 +770,7 @@ function DriverAccountPage() {
                     Batal
                   </button>
 
-                  <button
-                    style={styles.dangerButton}
-                    onClick={() => {
-                      window.location.href = "/";
-                    }}
-                  >
+                  <button style={styles.dangerButton} onClick={logout}>
                     Ya, Logout
                   </button>
                 </div>
@@ -378,11 +805,15 @@ function SecurityItem({ title, value, onClick }) {
   );
 }
 
-function Input({ label, value }) {
+function Input({ label, value, onChange }) {
   return (
     <label style={styles.inputGroup}>
       <span>{label}</span>
-      <input style={styles.input} defaultValue={value} />
+      <input
+        style={styles.input}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }
@@ -466,6 +897,7 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "22px",
+    marginBottom: "22px",
   },
 
   sectionHead: {
@@ -671,7 +1103,6 @@ const styles = {
 
   documentStatus: {
     margin: "6px 0",
-    color: "#087f23",
     fontSize: "12px",
     fontWeight: 900,
   },

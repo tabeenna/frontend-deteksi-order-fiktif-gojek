@@ -31,6 +31,16 @@ function DriverOrdersPage() {
     medium_risk: 0,
     high_risk: 0,
   });
+  const emptySummary = {
+  total_orders: 0,
+  low_risk: 0,
+  medium_risk: 0,
+  high_risk: 0,
+};
+
+const [isDriverOnline, setIsDriverOnline] = useState(() => {
+  return localStorage.getItem("driver_online_status") !== "offline";
+});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [navigationData, setNavigationData] = useState(null);
@@ -48,34 +58,72 @@ function DriverOrdersPage() {
   const [reportedOrders, setReportedOrders] = useState({});
 
   useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const response = await apiRequest("/driver/orders");
+  async function fetchOrders(onlineStatus = null) {
+    const currentOnlineStatus =
+      onlineStatus ?? localStorage.getItem("driver_online_status") !== "offline";
 
-        const apiOrders = response.data.orders || [];
+    setIsDriverOnline(currentOnlineStatus);
 
-        setOrders(apiOrders);
-        setSummary(
-          response.data.summary || {
-            total_orders: 0,
-            low_risk: 0,
-            medium_risk: 0,
-            high_risk: 0,
-          }
-        );
-
-        if (apiOrders.length > 0) {
-          setSelectedOrder(apiOrders[0]);
-        }
-      } catch (err) {
-        setError(err.message || "Gagal mengambil data order driver.");
-      } finally {
-        setLoading(false);
-      }
+    if (!currentOnlineStatus) {
+      setOrders([]);
+      setSummary(emptySummary);
+      setSelectedOrder(null);
+      setLoading(false);
+      return;
     }
 
-    fetchOrders();
-  }, []);
+    try {
+      const response = await apiRequest("/driver/orders");
+
+      const apiOrders = response.data.orders || [];
+
+      setOrders(apiOrders);
+      setSummary(response.data.summary || emptySummary);
+
+      if (apiOrders.length > 0) {
+        setSelectedOrder(apiOrders[0]);
+      } else {
+        setSelectedOrder(null);
+      }
+    } catch (err) {
+      setError(err.message || "Gagal mengambil data order driver.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchOrders();
+
+  function handleOnlineStatusChanged(event) {
+    const nextStatus = event.detail?.isOnline ?? true;
+
+    setIsDriverOnline(nextStatus);
+
+    if (!nextStatus) {
+      setOrders([]);
+      setSummary(emptySummary);
+      setSelectedOrder(null);
+      setActiveTrip(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    fetchOrders(true);
+  }
+
+  window.addEventListener(
+    "driver-online-status-changed",
+    handleOnlineStatusChanged
+  );
+
+  return () => {
+    window.removeEventListener(
+      "driver-online-status-changed",
+      handleOnlineStatusChanged
+    );
+  };
+}, []);
 
   const filteredOrders =
     activeFilter === "Semua"
@@ -426,6 +474,27 @@ function DriverOrdersPage() {
       </DriverLayout>
     );
   }
+
+  if (!isDriverOnline) {
+  return (
+    <DriverLayout
+      activeMenu="Orders"
+      title="Orders Monitoring"
+      subtitle="Driver sedang offline sehingga tidak dapat menerima order."
+    >
+      <Card>
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <h2 style={{ margin: "0 0 10px" }}>Driver Sedang Offline</h2>
+          <p style={{ color: "#68716c", lineHeight: "1.6" }}>
+            Saat status offline, sistem tidak akan menarik order baru dari
+            backend. Ubah status menjadi Online melalui tombol di kanan atas
+            untuk mulai menerima order kembali.
+          </p>
+        </div>
+      </Card>
+    </DriverLayout>
+  );
+}
 
   return (
     <DriverLayout
